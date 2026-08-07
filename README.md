@@ -45,7 +45,7 @@ App listens on port `3000`. SQLite data persists in `./data`.
 GitHub Actions builds a `linux/arm64` image and publishes it to GHCR on pushes to `main` / version tags:
 
 ```bash
-docker pull ghcr.io/<owner>/zorth-deploy-hub:latest
+docker pull ghcr.io/zorth44/zorth-deploy-hub:latest
 ```
 
 If the package is private the first time, open the package settings on GitHub and set visibility to Public.
