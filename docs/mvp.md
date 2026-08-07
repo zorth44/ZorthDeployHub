@@ -104,7 +104,7 @@ Server C
 
 ✅ 多 Terminal
 
-✅ Docker
+✅ 单二进制离线部署
 
 ---
 
@@ -555,37 +555,11 @@ $
 
 ---
 
-# 14. Docker
+# 14. 部署（linux/arm64 单二进制）
 
-```yaml
-services:
+通过 GitHub Actions 产出 `zorth-deploy-hub-linux-arm64.tar.gz`。
 
-  web:
-
-    build: .
-
-    ports:
-
-      - "3000:3000"
-
-    volumes:
-
-      - ./data:/app/data
-
-      - /root/.ssh/id_ed25519:/run/secrets/ssh_key:ro
-
-      - /root/.ssh/known_hosts:/run/secrets/known_hosts:ro
-
-    environment:
-
-      DATABASE_URL=file:/app/data/app.db
-
-      AUTH_SECRET=xxxx
-
-      SSH_PRIVATE_KEY_PATH=/run/secrets/ssh_key
-
-      SSH_KNOWN_HOSTS_PATH=/run/secrets/known_hosts
-```
+目标机解压后配置环境变量并运行即可，无需 Docker。
 
 ---
 
@@ -675,15 +649,9 @@ PTY Resize
 
 ---
 
-### Docker
+### 部署
 
-执行：
-
-```bash
-docker compose up -d
-```
-
-即可启动整个系统。
+解压 arm64 二进制包，配置 `AUTH_*` 与 `SSH_PRIVATE_KEY_PATH` 后启动即可。
 
 ---
 

@@ -2,7 +2,7 @@
 
 Team Web SSH terminal. One shared login, one shared SSH private key, browser shells to configured hosts.
 
-## Recommended deploy: single linux/arm64 binary
+## Deploy: single linux/arm64 binary
 
 GitHub Actions builds a self-contained **linux/arm64** binary (React SPA embedded) on pushes to `main` / version tags:
 
@@ -12,7 +12,7 @@ GitHub Actions builds a self-contained **linux/arm64** binary (React SPA embedde
 
 ### Offline / air-gapped
 
-1. Copy the tarball to the target host (no Node/JRE/Docker required).
+1. Copy the tarball to the target host (no Node/JRE required).
 2. Extract and configure:
 
 ```bash
@@ -73,7 +73,7 @@ CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o ../zorth-deploy-hub ./cmd/s
 | --- | --- |
 | `backend/` | Go HTTP API, WebSocket terminal, SSH, SQLite, embed |
 | `web/` | React + Vite SPA (xterm.js) |
-| Root Next.js / Docker | **Legacy** — kept for reference; prefer the Go binary |
+| Root Next.js files | **Legacy** reference only; prefer the Go binary |
 
 ## MVP features
 
@@ -82,9 +82,3 @@ CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o ../zorth-deploy-hub ./cmd/s
 - Online status (TCP probe ~30s)
 - Multi-tab Web Terminal (xterm.js + WebSocket + Go SSH)
 - PTY resize / interactive tools (`vim`, `top`, `less`)
-
-## Legacy Docker / Next.js
-
-The previous Node/Docker path remains in the repo (`Dockerfile`, `docker-compose.yml`, root `package.json`) for comparison only. Prefer the arm64 binary for offline size and simpler ops.
-
-Optional Docker image workflow: [`.github/workflows/docker-arm64.yml`](.github/workflows/docker-arm64.yml) (legacy).
