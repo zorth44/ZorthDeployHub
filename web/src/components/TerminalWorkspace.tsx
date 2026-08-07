@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Maximize2, Minimize2, Plus, X } from "lucide-react";
 import { fetchServers, type ServerRecord } from "../lib/api";
+import { createId } from "../lib/id";
 import { TerminalPane } from "./TerminalPane";
 
 type Tab = {
@@ -35,7 +36,7 @@ export function TerminalWorkspace() {
       return;
     }
 
-    const tabId = crypto.randomUUID();
+    const tabId = createId();
     setTabs([
       {
         id: tabId,
@@ -49,7 +50,7 @@ export function TerminalWorkspace() {
   }, [navigate, searchParams]);
 
   const addTab = useCallback((server: ServerRecord) => {
-    const tabId = crypto.randomUUID();
+    const tabId = createId();
     setTabs((prev) => [
       ...prev,
       {

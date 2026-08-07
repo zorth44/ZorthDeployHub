@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { createId } from "@/lib/id";
 
 type Tab = {
   id: string;
@@ -45,7 +46,7 @@ export function TerminalWorkspace() {
       return;
     }
 
-    const tabId = crypto.randomUUID();
+    const tabId = createId();
     setTabs([
       {
         id: tabId,
@@ -59,7 +60,7 @@ export function TerminalWorkspace() {
   }, [bootstrapped, router, searchParams]);
 
   const addTab = useCallback((server: ServerRecord) => {
-    const tabId = crypto.randomUUID();
+    const tabId = createId();
     setTabs((prev) => [
       ...prev,
       {
