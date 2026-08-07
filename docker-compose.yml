@@ -1,0 +1,21 @@
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ${SSH_KEY_HOST_PATH:-/root/.ssh/id_ed25519}:/run/secrets/ssh_key:ro
+      - ${SSH_KNOWN_HOSTS_HOST_PATH:-/root/.ssh/known_hosts}:/run/secrets/known_hosts:ro
+    environment:
+      DATABASE_URL: file:./data/app.db
+      AUTH_SECRET: ${AUTH_SECRET:-change-me-to-a-long-random-string}
+      AUTH_USERNAME: ${AUTH_USERNAME:-admin}
+      AUTH_PASSWORD: ${AUTH_PASSWORD:-admin}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      SSH_PRIVATE_KEY_PATH: /run/secrets/ssh_key
+      SSH_KNOWN_HOSTS_PATH: /run/secrets/known_hosts
+      APP_HOSTNAME: localhost
+      LISTEN_HOST: 0.0.0.0
+      PORT: 3000
+    restart: unless-stopped

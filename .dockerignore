@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+data
+secrets
+*.md
+.env
+.env.*
+!.env.example
+Dockerfile
+docker-compose.yml
+.DS_Store
