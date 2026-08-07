@@ -1,0 +1,59 @@
+package main
+
+import (
+	"log"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/joho/godotenv"
+
+	"github.com/zorth44/zorth-deploy-hub/backend/internal/auth"
+	"github.com/zorth44/zorth-deploy-hub/backend/internal/config"
+	"github.com/zorth44/zorth-deploy-hub/backend/internal/db"
+	"github.com/zorth44/zorth-deploy-hub/backend/internal/httpapi"
+	"github.com/zorth44/zorth-deploy-hub/backend/internal/servers"
+	"github.com/zorth44/zorth-deploy-hub/backend/internal/terminal"
+)
+
+func main() {
+	_ = godotenv.Load()
+	_ = godotenv.Load("../.env")
+
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("config: %v", err)
+	}
+
+	sqlDB, err := db.Open(cfg.DatabasePath)
+	if err != nil {
+		log.Fatalf("database: %v", err)
+	}
+	defer sqlDB.Close()
+
+	authService := auth.New(auth.Config{
+		Secret:       cfg.AuthSecret,
+		Username:     cfg.AuthUsername,
+		Password:     cfg.AuthPassword,
+		CookieName:   cfg.CookieName,
+		CookieSecure: cfg.CookieSecure,
+		TTL:          time.Duration(cfg.SessionTTLHours) * time.Hour,
+	})
+
+	store := servers.NewStore(sqlDB)
+	termManager := terminal.NewManager(store, cfg.SSHPrivateKeyPath)
+	wsHandler := terminal.NewWSHandler(authService, termManager)
+	api := httpapi.New(authService, store, wsHandler)
+
+	server := &http.Server{
+		Addr:              cfg.Addr(),
+		Handler:           api.Handler(),
+		ReadHeaderTimeout: 10 * time.Second,
+	}
+
+	log.Printf("ZorthDeployHub listening on http://%s", cfg.Addr())
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Printf("server stopped: %v", err)
+		os.Exit(1)
+	}
+}

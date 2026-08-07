@@ -1,0 +1,43 @@
+@import "tailwindcss";
+@import "@xterm/xterm/css/xterm.css";
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-background: #0f1419;
+  --color-foreground: #e7ecf1;
+  --color-card: #171d24;
+  --color-muted: #232b34;
+  --color-muted-foreground: #9aa7b5;
+  --color-border: #2b3440;
+  --color-primary: #3dd68c;
+  --color-primary-foreground: #062416;
+  --color-destructive: #f07178;
+  --color-input: #1c2430;
+  --color-ring: #3dd68c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: radial-gradient(1200px 600px at 10% -10%, #1a2733 0%, transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, #13251f 0%, transparent 50%),
+    var(--color-background);
+  color: var(--color-foreground);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}

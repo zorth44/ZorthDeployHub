@@ -1,4 +1,7 @@
-name: Build ARM64 Docker image
+name: Build ARM64 Docker image (legacy)
+
+# Prefer .github/workflows/release-arm64.yml for the single-binary offline package.
+# This workflow remains for the legacy Next.js Docker image.
 
 on:
   push:

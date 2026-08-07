@@ -2,70 +2,89 @@
 
 Team Web SSH terminal. One shared login, one shared SSH private key, browser shells to configured hosts.
 
-## Requirements
+## Recommended deploy: single linux/arm64 binary
 
-- Node.js 22+
-- An SSH private key that can reach your target servers
-- Docker (optional, for production-style deploy)
+GitHub Actions builds a self-contained **linux/arm64** binary (React SPA embedded) on pushes to `main` / version tags:
 
-## Quick start (local)
+- Workflow: [`.github/workflows/release-arm64.yml`](.github/workflows/release-arm64.yml)
+- Artifact: `zorth-deploy-hub-linux-arm64.tar.gz`
+- Tags `v*`: attached to the GitHub Release
 
-```bash
-cp .env.example .env
-# edit AUTH_* and SSH_* paths
+### Offline / air-gapped
 
-mkdir -p secrets data
-cp ~/.ssh/id_ed25519 secrets/ssh_key
-cp ~/.ssh/known_hosts secrets/known_hosts  # optional
-
-npm install
-npx prisma migrate deploy
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000), sign in with `AUTH_USERNAME` / `AUTH_PASSWORD`, add a server, click **Open**.
-
-## Docker
+1. Copy the tarball to the target host (no Node/JRE/Docker required).
+2. Extract and configure:
 
 ```bash
+tar -xzf zorth-deploy-hub-linux-arm64.tar.gz
 cp .env.example .env
 # set AUTH_SECRET, AUTH_USERNAME, AUTH_PASSWORD
+# point SSH_PRIVATE_KEY_PATH at your private key file
 
-# optional: override key mount paths
-export SSH_KEY_HOST_PATH=$HOME/.ssh/id_ed25519
-export SSH_KNOWN_HOSTS_HOST_PATH=$HOME/.ssh/known_hosts
-
-docker compose up -d --build
+mkdir -p data
+chmod +x ./zorth-deploy-hub
+./zorth-deploy-hub
 ```
 
-App listens on port `3000`. SQLite data persists in `./data`.
-
-## Docker image (ARM64)
-
-GitHub Actions builds a `linux/arm64` image and publishes it to GHCR on pushes to `main` / version tags:
-
-```bash
-docker pull ghcr.io/zorth44/zorth-deploy-hub:latest
-```
-
-If the package is private the first time, open the package settings on GitHub and set visibility to Public.
-
-## Environment
+App listens on `PORT` (default `3000`). SQLite data lives under `./data`.
 
 | Variable | Purpose |
 | --- | --- |
 | `DATABASE_URL` | SQLite path, default `file:./data/app.db` |
-| `AUTH_SECRET` | Auth.js secret |
+| `AUTH_SECRET` | Session HMAC secret |
 | `AUTH_USERNAME` / `AUTH_PASSWORD` | Shared web login |
-| `AUTH_URL` | Public app URL (e.g. `http://localhost:3000`) |
 | `SSH_PRIVATE_KEY_PATH` | Private key used for all SSH sessions |
-| `SSH_KNOWN_HOSTS_PATH` | Mounted for ops; host key checks accept for MVP |
+| `PORT` / `LISTEN_HOST` | Bind address (default `0.0.0.0:3000`) |
+| `COOKIE_SECURE` | Set `true` when serving over HTTPS |
+
+## Local development (Go + Vite)
+
+```bash
+# backend
+cp backend/.env.example backend/.env
+# or reuse root .env with SSH_PRIVATE_KEY_PATH=./secrets/ssh_key
+mkdir -p secrets data
+cp ~/.ssh/id_ed25519 secrets/ssh_key
+
+cd backend
+go run ./cmd/server
+
+# frontend (another terminal) — proxies /api to :3000
+cd web
+npm install
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173).
+
+### Build the single binary yourself
+
+```bash
+cd web && npm ci && npm run build && cd ..
+cd backend
+CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o ../zorth-deploy-hub ./cmd/server
+```
+
+`web` build output is written to `backend/internal/static/dist` and embedded into the binary.
+
+## Project layout
+
+| Path | Role |
+| --- | --- |
+| `backend/` | Go HTTP API, WebSocket terminal, SSH, SQLite, embed |
+| `web/` | React + Vite SPA (xterm.js) |
+| Root Next.js / Docker | **Legacy** — kept for reference; prefer the Go binary |
 
 ## MVP features
 
 - Shared credentials login
 - Server CRUD
 - Online status (TCP probe ~30s)
-- Multi-tab Web Terminal (xterm.js + Socket.IO + ssh2)
+- Multi-tab Web Terminal (xterm.js + WebSocket + Go SSH)
 - PTY resize / interactive tools (`vim`, `top`, `less`)
-- Docker Compose deploy
+
+## Legacy Docker / Next.js
+
+The previous Node/Docker path remains in the repo (`Dockerfile`, `docker-compose.yml`, root `package.json`) for comparison only. Prefer the arm64 binary for offline size and simpler ops.
+
+Optional Docker image workflow: [`.github/workflows/docker-arm64.yml`](.github/workflows/docker-arm64.yml) (legacy).

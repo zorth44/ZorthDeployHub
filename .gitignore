@@ -57,3 +57,13 @@ next-env.d.ts
 
 # generated prisma client
 /src/generated/prisma
+
+# Go + Vite
+/web/node_modules
+/backend/data/
+/backend/zorth-deploy-hub
+/zorth-deploy-hub
+/dist/
+/backend/internal/static/dist/assets/
+/backend/internal/static/dist/favicon.svg
+/backend/internal/static/dist/icons.svg
