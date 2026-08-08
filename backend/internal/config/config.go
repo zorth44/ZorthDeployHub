@@ -18,20 +18,22 @@ type Config struct {
 	CookieSecure       bool
 	CookieName         string
 	SessionTTLHours    int
+	SFTPMaxUploadBytes int64
 }
 
 func Load() (Config, error) {
 	cfg := Config{
-		ListenHost:        envOr("LISTEN_HOST", "0.0.0.0"),
-		Port:              envInt("PORT", 3000),
-		AuthSecret:        os.Getenv("AUTH_SECRET"),
-		AuthUsername:      envOr("AUTH_USERNAME", "admin"),
-		AuthPassword:      envOr("AUTH_PASSWORD", "admin"),
-		DatabasePath:      resolveDatabasePath(os.Getenv("DATABASE_URL")),
-		SSHPrivateKeyPath: os.Getenv("SSH_PRIVATE_KEY_PATH"),
-		CookieSecure:      envBool("COOKIE_SECURE", false),
-		CookieName:        envOr("COOKIE_NAME", "zorth_session"),
-		SessionTTLHours:   envInt("SESSION_TTL_HOURS", 168),
+		ListenHost:         envOr("LISTEN_HOST", "0.0.0.0"),
+		Port:               envInt("PORT", 3000),
+		AuthSecret:         os.Getenv("AUTH_SECRET"),
+		AuthUsername:       envOr("AUTH_USERNAME", "admin"),
+		AuthPassword:       envOr("AUTH_PASSWORD", "admin"),
+		DatabasePath:       resolveDatabasePath(os.Getenv("DATABASE_URL")),
+		SSHPrivateKeyPath:  os.Getenv("SSH_PRIVATE_KEY_PATH"),
+		CookieSecure:       envBool("COOKIE_SECURE", false),
+		CookieName:         envOr("COOKIE_NAME", "zorth_session"),
+		SessionTTLHours:    envInt("SESSION_TTL_HOURS", 168),
+		SFTPMaxUploadBytes: envInt64("SFTP_MAX_UPLOAD_BYTES", 200<<20),
 	}
 
 	if strings.TrimSpace(cfg.AuthSecret) == "" {
@@ -95,4 +97,16 @@ func envBool(key string, fallback bool) bool {
 	default:
 		return fallback
 	}
+}
+
+func envInt64(key string, fallback int64) int64 {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" {
+		return fallback
+	}
+	n, err := strconv.ParseInt(v, 10, 64)
+	if err != nil {
+		return fallback
+	}
+	return n
 }

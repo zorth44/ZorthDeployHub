@@ -33,6 +33,9 @@ export function AppShell({
             <Link to="/terminal" className="hover:text-[var(--color-foreground)]">
               Terminal
             </Link>
+            <Link to="/files" className="hover:text-[var(--color-foreground)]">
+              Files
+            </Link>
           </nav>
         </div>
         <button

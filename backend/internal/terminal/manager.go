@@ -3,13 +3,12 @@ package terminal
 import (
 	"fmt"
 	"io"
-	"os"
 	"sync"
-	"time"
 
 	"golang.org/x/crypto/ssh"
 
 	"github.com/zorth44/zorth-deploy-hub/backend/internal/servers"
+	"github.com/zorth44/zorth-deploy-hub/backend/internal/sshclient"
 )
 
 type SessionCallbacks struct {
@@ -26,17 +25,17 @@ type session struct {
 }
 
 type Manager struct {
-	store         *servers.Store
-	privateKeyPath string
-	mu            sync.Mutex
-	sessions      map[string]*session
+	store    *servers.Store
+	ssh      *sshclient.Client
+	mu       sync.Mutex
+	sessions map[string]*session
 }
 
-func NewManager(store *servers.Store, privateKeyPath string) *Manager {
+func NewManager(store *servers.Store, sshClient *sshclient.Client) *Manager {
 	return &Manager{
-		store:          store,
-		privateKeyPath: privateKeyPath,
-		sessions:       make(map[string]*session),
+		store:    store,
+		ssh:      sshClient,
+		sessions: make(map[string]*session),
 	}
 }
 
@@ -48,28 +47,9 @@ func (m *Manager) Open(connID, serverID string, cols, rows int, cb SessionCallba
 		return servers.Server{}, err
 	}
 
-	keyBytes, err := os.ReadFile(m.privateKeyPath)
+	client, err := m.ssh.Dial(server)
 	if err != nil {
-		return servers.Server{}, fmt.Errorf("read SSH private key: %w", err)
-	}
-	signer, err := ssh.ParsePrivateKey(keyBytes)
-	if err != nil {
-		return servers.Server{}, fmt.Errorf("parse SSH private key: %w", err)
-	}
-
-	config := &ssh.ClientConfig{
-		User: server.Username,
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(signer),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(), //nolint:gosec // MVP matches current Node behavior
-		Timeout:         20 * time.Second,
-	}
-
-	addr := fmt.Sprintf("%s:%d", server.Host, server.Port)
-	client, err := ssh.Dial("tcp", addr, config)
-	if err != nil {
-		return servers.Server{}, fmt.Errorf("SSH connect failed: %w", err)
+		return servers.Server{}, err
 	}
 
 	sshSession, err := client.NewSession()

@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/zorth44/zorth-deploy-hub/backend/internal/auth"
+	"github.com/zorth44/zorth-deploy-hub/backend/internal/files"
 	"github.com/zorth44/zorth-deploy-hub/backend/internal/servers"
 	"github.com/zorth44/zorth-deploy-hub/backend/internal/static"
 	"github.com/zorth44/zorth-deploy-hub/backend/internal/terminal"
@@ -20,10 +21,11 @@ type API struct {
 	auth  *auth.Service
 	store *servers.Store
 	ws    *terminal.WSHandler
+	files *files.Handler
 }
 
-func New(authService *auth.Service, store *servers.Store, ws *terminal.WSHandler) *API {
-	return &API{auth: authService, store: store, ws: ws}
+func New(authService *auth.Service, store *servers.Store, ws *terminal.WSHandler, filesHandler *files.Handler) *API {
+	return &API{auth: authService, store: store, ws: ws, files: filesHandler}
 }
 
 func (a *API) Handler() http.Handler {
@@ -45,6 +47,18 @@ func (a *API) Handler() http.Handler {
 			pr.Put("/servers/{id}", a.handleUpdateServer)
 			pr.Delete("/servers/{id}", a.handleDeleteServer)
 			pr.Get("/servers/status", a.handleStatus)
+
+			pr.Get("/sftp/list", a.files.List)
+			pr.Get("/sftp/exists", a.files.Exists)
+			pr.Post("/sftp/mkdir", a.files.Mkdir)
+			pr.Delete("/sftp", a.files.Delete)
+		})
+
+		api.Group(func(pr chi.Router) {
+			pr.Use(a.auth.Middleware)
+			pr.Use(middleware.Timeout(30 * time.Minute))
+			pr.Get("/sftp/download", a.files.Download)
+			pr.Post("/sftp/upload", a.files.Upload)
 		})
 
 		api.Get("/terminal/ws", a.ws.ServeHTTP)

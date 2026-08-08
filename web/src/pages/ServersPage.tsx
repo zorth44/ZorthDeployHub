@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Pencil, Plus, Terminal, Trash2 } from "lucide-react";
+import { FolderOpen, Pencil, Plus, Terminal, Trash2 } from "lucide-react";
 import {
   fetchServers,
   fetchStatus,
@@ -103,6 +103,9 @@ export function ServersPage() {
               serverId: server.id,
               name: server.name,
             }).toString()}`;
+            const filesHref = `/files?${new URLSearchParams({
+              serverId: server.id,
+            }).toString()}`;
 
             return (
               <div
@@ -130,6 +133,13 @@ export function ServersPage() {
                   >
                     <Terminal className="size-4" />
                     Open
+                  </Link>
+                  <Link
+                    to={filesHref}
+                    className="inline-flex items-center gap-2 rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:bg-[var(--color-muted)]"
+                  >
+                    <FolderOpen className="size-4" />
+                    Files
                   </Link>
                   <button
                     type="button"

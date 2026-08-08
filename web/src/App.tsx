@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./lib/auth";
 import { LoginPage } from "./pages/LoginPage";
 import { ServersPage } from "./pages/ServersPage";
 import { TerminalPage } from "./pages/TerminalPage";
+import { FilesPage } from "./pages/FilesPage";
 import { AppShell } from "./components/AppShell";
 
 function Protected({ children }: { children: React.ReactNode }) {
@@ -41,6 +42,18 @@ export default function App() {
             <Protected>
               <AppShell fullHeight>
                 <TerminalPage />
+              </AppShell>
+            </Protected>
+          }
+        />
+        <Route
+          path="/files"
+          element={
+            <Protected>
+              <AppShell fullHeight>
+                <div className="mx-auto flex h-full w-full max-w-5xl flex-col p-6">
+                  <FilesPage />
+                </div>
               </AppShell>
             </Protected>
           }
