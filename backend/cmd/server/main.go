@@ -12,9 +12,11 @@ import (
 	"github.com/zorth44/zorth-deploy-hub/backend/internal/config"
 	"github.com/zorth44/zorth-deploy-hub/backend/internal/db"
 	"github.com/zorth44/zorth-deploy-hub/backend/internal/files"
+	"github.com/zorth44/zorth-deploy-hub/backend/internal/groups"
 	"github.com/zorth44/zorth-deploy-hub/backend/internal/httpapi"
 	"github.com/zorth44/zorth-deploy-hub/backend/internal/servers"
 	"github.com/zorth44/zorth-deploy-hub/backend/internal/sshclient"
+	"github.com/zorth44/zorth-deploy-hub/backend/internal/tags"
 	"github.com/zorth44/zorth-deploy-hub/backend/internal/terminal"
 )
 
@@ -43,12 +45,14 @@ func main() {
 	})
 
 	store := servers.NewStore(sqlDB)
+	groupStore := groups.NewStore(sqlDB)
+	tagStore := tags.NewStore(sqlDB)
 	sshClient := sshclient.New(cfg.SSHPrivateKeyPath)
 	termManager := terminal.NewManager(store, sshClient)
 	wsHandler := terminal.NewWSHandler(authService, termManager)
 	filesService := files.NewService(store, sshClient, cfg.SFTPMaxUploadBytes)
 	filesHandler := files.NewHandler(filesService)
-	api := httpapi.New(authService, store, wsHandler, filesHandler)
+	api := httpapi.New(authService, store, groupStore, tagStore, wsHandler, filesHandler)
 
 	server := &http.Server{
 		Addr:              cfg.Addr(),

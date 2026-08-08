@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import type { ServerRecord } from "../lib/api";
+import {
+  COLOR_PRESETS,
+  createTag,
+  fetchGroups,
+  fetchTags,
+  type GroupRecord,
+  type ServerRecord,
+  type TagRecord,
+} from "../lib/api";
 
 type FormState = {
   name: string;
@@ -7,6 +15,8 @@ type FormState = {
   port: string;
   username: string;
   remark: string;
+  groupId: string;
+  tagIds: string[];
 };
 
 const emptyForm: FormState = {
@@ -15,6 +25,8 @@ const emptyForm: FormState = {
   port: "22",
   username: "",
   remark: "",
+  groupId: "",
+  tagIds: [],
 };
 
 export function ServerFormDialog({
@@ -29,12 +41,28 @@ export function ServerFormDialog({
   onSaved: () => void;
 }) {
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [groups, setGroups] = useState<GroupRecord[]>([]);
+  const [tags, setTags] = useState<TagRecord[]>([]);
+  const [newTagName, setNewTagName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const isEdit = !!initial;
 
   useEffect(() => {
     if (!open) return;
+    void (async () => {
+      try {
+        const [groupList, tagList] = await Promise.all([
+          fetchGroups(),
+          fetchTags(),
+        ]);
+        setGroups(groupList);
+        setTags(tagList);
+      } catch {
+        setError("Failed to load groups/tags");
+      }
+    })();
+
     if (initial) {
       setForm({
         name: initial.name,
@@ -42,14 +70,46 @@ export function ServerFormDialog({
         port: String(initial.port),
         username: initial.username,
         remark: initial.remark ?? "",
+        groupId: initial.groupId ?? "",
+        tagIds: (initial.tags ?? []).map((t) => t.id),
       });
     } else {
       setForm(emptyForm);
     }
+    setNewTagName("");
     setError(null);
   }, [open, initial]);
 
   if (!open) return null;
+
+  function toggleTag(tagId: string) {
+    setForm((s) => ({
+      ...s,
+      tagIds: s.tagIds.includes(tagId)
+        ? s.tagIds.filter((id) => id !== tagId)
+        : [...s.tagIds, tagId],
+    }));
+  }
+
+  async function handleCreateTag() {
+    const name = newTagName.trim();
+    if (!name) return;
+    try {
+      const tag = await createTag({
+        name,
+        color: COLOR_PRESETS[(tags.length + 1) % COLOR_PRESETS.length],
+      });
+      setTags((prev) =>
+        [...prev, tag].sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+        ),
+      );
+      setForm((s) => ({ ...s, tagIds: [...s.tagIds, tag.id] }));
+      setNewTagName("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create tag");
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -62,6 +122,8 @@ export function ServerFormDialog({
       port: Number(form.port),
       username: form.username,
       remark: form.remark || null,
+      groupId: form.groupId || null,
+      tagIds: form.tagIds,
     };
 
     try {
@@ -93,7 +155,7 @@ export function ServerFormDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 shadow-2xl">
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 shadow-2xl">
         <h2 className="mb-4 text-lg font-semibold">
           {isEdit ? "Edit Server" : "Add Server"}
         </h2>
@@ -139,6 +201,76 @@ export function ServerFormDialog({
                 className="field"
               />
             </Field>
+          </div>
+          <Field label="Group">
+            <select
+              value={form.groupId}
+              onChange={(e) =>
+                setForm((s) => ({ ...s, groupId: e.target.value }))
+              }
+              className="field"
+            >
+              <option value="">Ungrouped</option>
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <div className="space-y-2 text-sm">
+            <span>Tags</span>
+            {tags.length === 0 ? (
+              <p className="text-[var(--color-muted-foreground)]">
+                No tags yet. Create one below.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag) => {
+                  const selected = form.tagIds.includes(tag.id);
+                  return (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => toggleTag(tag.id)}
+                      className="rounded-md border px-2.5 py-1 text-xs transition-colors"
+                      style={{
+                        borderColor: selected ? tag.color : "var(--color-border)",
+                        backgroundColor: selected
+                          ? `${tag.color}33`
+                          : "transparent",
+                        color: selected
+                          ? "var(--color-foreground)"
+                          : "var(--color-muted-foreground)",
+                      }}
+                    >
+                      {tag.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                placeholder="New tag name"
+                className="field"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void handleCreateTag();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => void handleCreateTag()}
+                className="shrink-0 rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:bg-[var(--color-muted)]"
+              >
+                Add tag
+              </button>
+            </div>
           </div>
           <Field label="Remark">
             <textarea
