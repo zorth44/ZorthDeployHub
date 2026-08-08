@@ -6,6 +6,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { io, type Socket } from "socket.io-client";
 import "@xterm/xterm/css/xterm.css";
+import { useTerminalSettings } from "@/components/terminal/terminal-settings-context";
 
 type TerminalPaneProps = {
   serverId: string;
@@ -19,26 +20,35 @@ export function TerminalPane({ serverId, active, onTitle }: TerminalPaneProps) {
   const fitRef = useRef<FitAddon | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const onTitleRef = useRef(onTitle);
+  const { settings, fontFamily, theme } = useTerminalSettings();
+  const settingsRef = useRef({
+    fontFamily,
+    fontSize: settings.fontSize,
+    theme,
+  });
 
   useEffect(() => {
     onTitleRef.current = onTitle;
   }, [onTitle]);
 
   useEffect(() => {
+    settingsRef.current = {
+      fontFamily,
+      fontSize: settings.fontSize,
+      theme,
+    };
+  }, [fontFamily, settings.fontSize, theme]);
+
+  useEffect(() => {
     if (!containerRef.current) return;
 
+    const initial = settingsRef.current;
     const term = new Terminal({
       cursorBlink: true,
-      fontFamily:
-        "var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace",
-      fontSize: 14,
+      fontFamily: initial.fontFamily,
+      fontSize: initial.fontSize,
       lineHeight: 1.2,
-      theme: {
-        background: "#0b0f14",
-        foreground: "#e5e7eb",
-        cursor: "#34d399",
-        selectionBackground: "#334155",
-      },
+      theme: initial.theme,
       allowProposedApi: true,
     });
 
@@ -131,6 +141,26 @@ export function TerminalPane({ serverId, active, onTitle }: TerminalPaneProps) {
   }, [serverId]);
 
   useEffect(() => {
+    const term = termRef.current;
+    if (!term) return;
+
+    term.options.fontFamily = fontFamily;
+    term.options.fontSize = settings.fontSize;
+    term.options.theme = theme;
+
+    const frame = requestAnimationFrame(() => {
+      fitRef.current?.fit();
+      if (termRef.current && socketRef.current?.connected) {
+        socketRef.current.emit("terminal:resize", {
+          cols: termRef.current.cols,
+          rows: termRef.current.rows,
+        });
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [fontFamily, settings.fontSize, theme]);
+
+  useEffect(() => {
     if (!active) return;
     const frame = requestAnimationFrame(() => {
       fitRef.current?.fit();
@@ -148,7 +178,7 @@ export function TerminalPane({ serverId, active, onTitle }: TerminalPaneProps) {
   return (
     <div
       className={active ? "h-full w-full" : "hidden"}
-      style={{ background: "#0b0f14" }}
+      style={{ background: theme.background ?? "#0b0f14" }}
     >
       <div ref={containerRef} className="h-full w-full p-2" />
     </div>

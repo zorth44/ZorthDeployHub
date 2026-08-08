@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Maximize2, Minimize2, Plus, X } from "lucide-react";
+import { Maximize2, Minimize2, Plus, Settings, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TerminalPane } from "@/components/terminal/terminal-pane";
+import { TerminalSettingsProvider } from "@/components/terminal/terminal-settings-context";
+import { TerminalSettingsDialog } from "@/components/terminal/terminal-settings-dialog";
 import type { ServerRecord } from "@/components/servers/server-form-dialog";
 import {
   Dialog,
@@ -21,12 +23,21 @@ type Tab = {
 };
 
 export function TerminalWorkspace() {
+  return (
+    <TerminalSettingsProvider>
+      <TerminalWorkspaceInner />
+    </TerminalSettingsProvider>
+  );
+}
+
+function TerminalWorkspaceInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [servers, setServers] = useState<ServerRecord[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const bootstrapped = useMemo(() => ({ current: false }), []);
 
@@ -147,6 +158,15 @@ export function TerminalWorkspace() {
           type="button"
           size="icon"
           variant="ghost"
+          onClick={() => setSettingsOpen(true)}
+          aria-label="Terminal appearance settings"
+        >
+          <Settings className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
           onClick={() => setFullscreen((value) => !value)}
           aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
         >
@@ -158,7 +178,7 @@ export function TerminalWorkspace() {
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 bg-[#0b0f14]">
+      <div className="min-h-0 flex-1">
         {tabs.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
             <p>No terminal open.</p>
@@ -207,6 +227,11 @@ export function TerminalWorkspace() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <TerminalSettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+      />
     </div>
   );
 }
