@@ -294,15 +294,15 @@ export function FilesPage() {
         <nav className="flex min-w-0 flex-wrap items-center gap-0.5 text-xs" aria-label={t("files.title")}>
           {crumbs.map((crumb, index) => (
             <span key={crumb.path} className="flex min-w-0 items-center">
-              {index > 0 ? <ChevronRight className="size-3.5 shrink-0 text-[#566575]" /> : null}
-              <button type="button" className="max-w-40 truncate rounded-md px-2 py-1.5 font-mono text-[#b8c4cf] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]" onClick={() => void refresh(crumb.path)}>
+              {index > 0 ? <ChevronRight className="size-3.5 shrink-0 text-[var(--color-subtle-foreground)]" /> : null}
+              <button type="button" className="max-w-40 truncate rounded-md px-2 py-1.5 font-mono text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]" onClick={() => void refresh(crumb.path)}>
                 {crumb.label}
               </button>
             </span>
           ))}
         </nav>
         {selectedServer ? (
-          <p className="shrink-0 truncate font-mono text-[10px] text-[var(--color-muted-foreground)]">
+          <p className="shrink-0 truncate font-mono text-[11px] text-[var(--color-muted-foreground)]">
             {selectedServer.username}@{selectedServer.host}:{selectedServer.port}
           </p>
         ) : null}

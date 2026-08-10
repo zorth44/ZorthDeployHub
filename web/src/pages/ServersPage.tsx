@@ -181,7 +181,7 @@ export function ServersPage() {
         <details className="sm:hidden">
           <summary className="menu-summary flex min-h-11 cursor-pointer items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium">
             <span className="flex items-center gap-2"><SlidersHorizontal className="size-4 text-[var(--color-primary)]" />{t("servers.filters")}</span>
-            <span className="rounded-full bg-[var(--color-muted)] px-2 py-0.5 font-mono text-[10px] text-[var(--color-muted-foreground)]">{(selectedGroupId !== "all" ? 1 : 0) + selectedTagIds.length}</span>
+            <span className="rounded-full bg-[var(--color-muted)] px-2 py-0.5 font-mono text-[11px] text-[var(--color-muted-foreground)]">{(selectedGroupId !== "all" ? 1 : 0) + selectedTagIds.length}</span>
           </summary>
           <div className="space-y-4 border-t border-[var(--color-border)] p-3">
             <FilterGroup label={t("servers.group")}>
@@ -223,7 +223,7 @@ export function ServersPage() {
       </section>
 
       <div className="mt-5 flex items-center justify-between gap-4 px-1">
-        <p className="font-mono text-[11px] text-[var(--color-muted-foreground)]">
+        <p className="font-mono text-xs text-[var(--color-muted-foreground)]">
           {t("servers.showing", { count: filteredServers.length, total: servers.length })}
         </p>
         <span className="h-px flex-1 bg-[var(--color-border)]" />
@@ -300,7 +300,7 @@ export function ServersPage() {
 function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[#718091]">{label}</p>
+      <p className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-subtle-foreground)]">{label}</p>
       <div className="flex flex-wrap items-center gap-2">{children}</div>
     </div>
   );
@@ -319,8 +319,8 @@ function ServerRow({ server, deleting, onEdit, onDelete }: { server: ServerRecor
             <h2 className="truncate text-[15px] font-semibold tracking-[-0.01em] sm:text-base">{server.name}</h2>
             {server.group ? <CatalogBadge label={server.group.name} color={server.group.color} /> : null}
           </div>
-          <p className="mt-2 truncate font-mono text-xs text-[#96a7b8] sm:text-[13px]">
-            {server.username}<span className="text-[#536272]">@</span>{server.host}<span className="text-[#536272]">:</span>{server.port}
+          <p className="mt-2 truncate font-mono text-xs text-[var(--color-muted-foreground)] sm:text-[13px]">
+            {server.username}<span className="text-[var(--color-subtle-foreground)]">@</span>{server.host}<span className="text-[var(--color-subtle-foreground)]">:</span>{server.port}
           </p>
           <div className="mt-3 flex min-h-5 flex-wrap items-center gap-1.5">
             {(server.tags ?? []).map((tag) => <CatalogBadge key={tag.id} label={tag.name} color={tag.color} subtle />)}
@@ -360,7 +360,7 @@ function ServerRow({ server, deleting, onEdit, onDelete }: { server: ServerRecor
 
 function CatalogBadge({ label, color, subtle = false }: { label: string; color: string; subtle?: boolean }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-medium sm:text-[11px] ${subtle ? "bg-transparent" : ""}`} style={{ borderColor: `${color}42`, backgroundColor: subtle ? "transparent" : `${color}14`, color }}>
+    <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-medium sm:text-xs ${subtle ? "bg-transparent" : ""}`} style={{ borderColor: `${color}42`, backgroundColor: subtle ? "transparent" : `${color}14`, color }}>
       <span className="size-1.5 rounded-full" style={{ backgroundColor: color }} />
       {label}
     </span>

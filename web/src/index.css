@@ -17,7 +17,9 @@
   --color-card: #111820;
   --color-card-elevated: #17202a;
   --color-muted: #202b36;
-  --color-muted-foreground: #8b9aaa;
+  /* Readable secondary copy and quieter metadata are separate visual roles. */
+  --color-muted-foreground: #a8b4c0;
+  --color-subtle-foreground: #8998a8;
   --color-border: #25313d;
   --color-border-strong: #344353;
   --color-primary: #56d990;
@@ -143,7 +145,7 @@ button:disabled {
 }
 
 .field::placeholder {
-  color: #677687;
+  color: var(--color-subtle-foreground);
 }
 
 .field:hover {

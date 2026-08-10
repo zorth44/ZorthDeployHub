@@ -143,11 +143,11 @@ export function TerminalWorkspace({ visible = true }: { visible?: boolean }) {
           </span>
           <div className="min-w-0">
             <h1 className="truncate text-sm font-semibold">{t("terminal.workspaceTitle")}</h1>
-            <p className="hidden truncate text-[11px] text-[var(--color-muted-foreground)] sm:block">{t("terminal.workspaceSubtitle")}</p>
+            <p className="hidden truncate text-xs text-[var(--color-muted-foreground)] sm:block">{t("terminal.workspaceSubtitle")}</p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <span className="hidden font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-muted-foreground)] sm:inline">
+          <span className="hidden font-mono text-xs uppercase tracking-[0.08em] text-[var(--color-muted-foreground)] sm:inline">
             {t("terminal.sessions", { count: tabs.length })}
           </span>
           <button
@@ -210,7 +210,7 @@ export function TerminalWorkspace({ visible = true }: { visible?: boolean }) {
         {filesOpen ? <RemoteFilesSidebar server={activeServer} onClose={() => setFilesOpen(false)} /> : null}
       </div>
 
-      <div className="flex h-6 shrink-0 items-center justify-between border-t border-[var(--color-border)] bg-[var(--color-card)] px-3 font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--color-muted-foreground)]">
+      <div className="flex h-6 shrink-0 items-center justify-between border-t border-[var(--color-border)] bg-[var(--color-card)] px-3 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--color-muted-foreground)]">
         <span className="flex items-center gap-1.5"><ShieldCheck className="size-3 text-[var(--color-primary)]" />{t("terminal.secureChannel")}</span>
         <span>UTF-8 · xterm</span>
       </div>
@@ -231,17 +231,17 @@ export function TerminalWorkspace({ visible = true }: { visible?: boolean }) {
                 }}
                 onKeyDown={handlePickerKeyDown}
                 placeholder={t("terminal.searchPlaceholder")}
-                className="h-14 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[#657586] focus-visible:outline-none"
+                className="h-14 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[var(--color-subtle-foreground)] focus-visible:outline-none"
                 autoFocus
               />
-              <kbd className="rounded border border-[var(--color-border)] bg-[var(--color-muted)]/60 px-1.5 py-0.5 font-mono text-[9px] text-[var(--color-muted-foreground)]">ESC</kbd>
+              <kbd className="rounded border border-[var(--color-border)] bg-[var(--color-muted)]/60 px-1.5 py-0.5 font-mono text-[11px] text-[var(--color-muted-foreground)]">ESC</kbd>
             </div>
             <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-2">
               <div>
                 <h2 id="terminal-picker-title" className="text-xs font-semibold">{t("terminal.pickerTitle")}</h2>
-                <p className="mt-0.5 text-[10px] text-[var(--color-muted-foreground)]">{t("terminal.pickerHint")}</p>
+                <p className="mt-0.5 text-xs text-[var(--color-muted-foreground)]">{t("terminal.pickerHint")}</p>
               </div>
-              <span className="font-mono text-[9px] text-[var(--color-muted-foreground)]">{t("terminal.serverCount", { count: filteredServers.length })}</span>
+              <span className="font-mono text-[11px] text-[var(--color-muted-foreground)]">{t("terminal.serverCount", { count: filteredServers.length })}</span>
             </div>
             <div ref={pickerListRef} className="max-h-[min(24rem,55vh)] overflow-y-auto p-1.5">
                 {filteredServers.length === 0 ? (
@@ -258,15 +258,15 @@ export function TerminalWorkspace({ visible = true }: { visible?: boolean }) {
                     >
                       <span className={`flex size-8 shrink-0 items-center justify-center rounded-lg border ${index === highlightedIndex ? "border-emerald-300/25 bg-emerald-400/10 text-[var(--color-primary)]" : "border-[var(--color-border)] bg-black/10 text-[var(--color-muted-foreground)]"}`}><Server className="size-4" /></span>
                       <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-2"><span className="truncate text-sm font-medium">{server.name}</span>{server.group ? <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px]" style={{ color: server.group.color, backgroundColor: `${server.group.color}14` }}>{server.group.name}</span> : null}</span>
-                        <span className="mt-0.5 block truncate font-mono text-[10px] text-[var(--color-muted-foreground)]">{server.username}@{server.host}:{server.port}</span>
+                        <span className="flex items-center gap-2"><span className="truncate text-sm font-medium">{server.name}</span>{server.group ? <span className="shrink-0 rounded px-1.5 py-0.5 text-[11px]" style={{ color: server.group.color, backgroundColor: `${server.group.color}14` }}>{server.group.name}</span> : null}</span>
+                        <span className="mt-0.5 block truncate font-mono text-xs text-[var(--color-muted-foreground)]">{server.username}@{server.host}:{server.port}</span>
                       </span>
                       {index === highlightedIndex ? <CornerDownLeft className="size-3.5 shrink-0 text-[var(--color-primary)]" /> : null}
                     </button>
                   ))
                 )}
             </div>
-            <div className="flex items-center gap-4 border-t border-[var(--color-border)] px-4 py-2 font-mono text-[9px] text-[var(--color-muted-foreground)]">
+            <div className="flex items-center gap-4 border-t border-[var(--color-border)] px-4 py-2 font-mono text-[11px] text-[var(--color-muted-foreground)]">
               <span>↑↓ {t("terminal.pickerNavigate")}</span><span>↵ {t("terminal.pickerOpen")}</span><span>esc {t("common.close")}</span>
             </div>
           </div>

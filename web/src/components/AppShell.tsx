@@ -21,7 +21,7 @@ function Brand() {
         <span className="block truncate font-mono text-sm font-semibold tracking-[-0.02em] text-[var(--color-foreground)]">
           {t("shell.brand")}
         </span>
-        <span className="hidden truncate text-[10px] uppercase tracking-[0.16em] text-[var(--color-muted-foreground)] sm:block lg:block">
+        <span className="hidden truncate text-[11px] uppercase tracking-[0.14em] text-[var(--color-subtle-foreground)] sm:block lg:block">
           {t("shell.workspace")}
         </span>
       </span>
@@ -95,7 +95,7 @@ export function AppShell({
         </div>
 
         <div className="mt-8">
-          <p className="mb-2 px-3 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#607080]">
+          <p className="mb-2 px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-subtle-foreground)]">
             {t("shell.nav.label")}
           </p>
           <Navigation />
@@ -107,7 +107,7 @@ export function AppShell({
               <ShieldCheck className="size-4 text-[var(--color-primary)]" />
               {t("shell.secure")}
             </div>
-            <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
+            <p className="mt-1.5 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
               {t("shell.secureHint")}
             </p>
           </div>

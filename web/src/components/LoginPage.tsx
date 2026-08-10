@@ -97,7 +97,7 @@ export function LoginPage() {
               </button>
             </form>
 
-            <div className="mt-7 flex items-center justify-center gap-2 text-center text-[11px] text-[var(--color-muted-foreground)] lg:hidden">
+            <div className="mt-7 flex items-center justify-center gap-2 text-center text-xs text-[var(--color-muted-foreground)] lg:hidden">
               <ShieldCheck className="size-3.5 text-[var(--color-primary)]" />
               {t("login.security")}
             </div>

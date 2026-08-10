@@ -176,7 +176,7 @@ export function RemoteFilesSidebar({ server, onClose }: Props) {
           <Folder className="size-4 shrink-0 text-[var(--color-primary)]" />
           <div className="min-w-0">
             <p className="truncate text-xs font-semibold">{t("files.sidebarTitle")}</p>
-            <p className="truncate font-mono text-[9px] text-[var(--color-muted-foreground)]">
+            <p className="truncate font-mono text-[11px] text-[var(--color-muted-foreground)]">
               {server ? `${server.username}@${server.host}` : t("files.followSession")}
             </p>
           </div>
@@ -200,11 +200,11 @@ export function RemoteFilesSidebar({ server, onClose }: Props) {
         <input ref={fileInputRef} className="hidden" type="file" multiple onChange={(event) => void handleUpload(event.target.files)} />
       </div>
 
-      <nav className="flex min-h-10 shrink-0 items-center overflow-x-auto border-b border-[var(--color-border)] px-2 text-[10px]" aria-label={t("files.title")}>
+      <nav className="flex min-h-10 shrink-0 items-center overflow-x-auto border-b border-[var(--color-border)] px-2 text-xs" aria-label={t("files.title")}>
         {crumbs.map((crumb, index) => (
           <span key={crumb.path} className="flex shrink-0 items-center">
-            {index > 0 ? <ChevronRight className="size-3 text-[#536272]" /> : null}
-            <button type="button" onClick={() => void refresh(crumb.path)} className="max-w-28 truncate rounded px-1.5 py-1 font-mono text-[#aab7c4] hover:bg-[var(--color-muted)]">
+            {index > 0 ? <ChevronRight className="size-3 text-[var(--color-subtle-foreground)]" /> : null}
+            <button type="button" onClick={() => void refresh(crumb.path)} className="max-w-28 truncate rounded px-1.5 py-1 font-mono text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]">
               {crumb.label}
             </button>
           </span>
@@ -212,7 +212,7 @@ export function RemoteFilesSidebar({ server, onClose }: Props) {
       </nav>
 
       {uploadPct !== null ? (
-        <div className="shrink-0 border-b border-emerald-300/15 bg-emerald-400/6 px-3 py-2 text-[10px]">
+        <div className="shrink-0 border-b border-emerald-300/15 bg-emerald-400/6 px-3 py-2 text-xs">
           <div className="flex justify-between gap-2"><span className="truncate">{busyName}</span><span>{uploadPct}%</span></div>
           <div className="mt-1 h-1 overflow-hidden rounded bg-[var(--color-muted)]"><div className="h-full bg-[var(--color-primary)]" style={{ width: `${uploadPct}%` }} /></div>
         </div>
@@ -239,9 +239,9 @@ export function RemoteFilesSidebar({ server, onClose }: Props) {
             {entries.map((entry) => (
               <div key={`${entry.path}:${entry.name}`} className="group flex min-h-9 items-center gap-2 rounded-md px-2 hover:bg-[var(--color-muted)]/60">
                 <button type="button" disabled={!entry.isDir} onClick={() => entry.isDir && void refresh(entry.path)} className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:cursor-default">
-                  {entry.isDir ? <Folder className="size-4 shrink-0 fill-emerald-400/8 text-[var(--color-primary)]" /> : <File className="size-4 shrink-0 text-[#718091]" />}
-                  <span className="min-w-0 flex-1 truncate font-mono text-[11px]">{entry.name}{entry.isDir && entry.name !== ".." ? "/" : ""}</span>
-                  <span className="shrink-0 font-mono text-[9px] text-[var(--color-muted-foreground)]">{formatSize(entry.size, entry.isDir)}</span>
+                  {entry.isDir ? <Folder className="size-4 shrink-0 fill-emerald-400/8 text-[var(--color-primary)]" /> : <File className="size-4 shrink-0 text-[var(--color-subtle-foreground)]" />}
+                  <span className="min-w-0 flex-1 truncate font-mono text-xs">{entry.name}{entry.isDir && entry.name !== ".." ? "/" : ""}</span>
+                  <span className="shrink-0 font-mono text-[11px] text-[var(--color-muted-foreground)]">{formatSize(entry.size, entry.isDir)}</span>
                 </button>
                 <div className="hidden shrink-0 items-center gap-0.5 group-hover:flex group-focus-within:flex">
                   {!entry.isDir ? <button type="button" disabled={busyName === entry.name} onClick={() => void handleDownload(entry)} className="flex size-6 items-center justify-center rounded text-[var(--color-muted-foreground)] hover:bg-black/20 hover:text-[var(--color-foreground)]" aria-label={t("files.download", { name: entry.name })}><Download className="size-3" /></button> : null}
