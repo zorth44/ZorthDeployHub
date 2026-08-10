@@ -248,7 +248,7 @@ func (s *Service) Delete(serverID, rawPath string, recursive bool) error {
 		if readErr != nil {
 			return readErr
 		}
-		if len(entries) > 0 {
+		if hasNonDotEntries(entries) {
 			return ErrNotEmpty
 		}
 		return sess.sftp.RemoveDirectory(target)
@@ -257,24 +257,80 @@ func (s *Service) Delete(serverID, rawPath string, recursive bool) error {
 	return removeAll(sess.sftp, target)
 }
 
-func removeAll(client *sftp.Client, target string) error {
-	entries, err := client.ReadDir(target)
-	if err != nil {
-		return err
-	}
+// sftpRemover is the subset of *sftp.Client used by removeAll.
+type sftpRemover interface {
+	ReadDir(path string) ([]os.FileInfo, error)
+	Lstat(path string) (os.FileInfo, error)
+	Remove(path string) error
+	RemoveDirectory(path string) error
+}
+
+func hasNonDotEntries(entries []os.FileInfo) bool {
 	for _, e := range entries {
-		child := path.Join(target, e.Name())
-		if e.IsDir() {
-			if err := removeAll(client, child); err != nil {
-				return err
-			}
+		name := e.Name()
+		if name == "." || name == ".." {
 			continue
 		}
-		if err := client.Remove(child); err != nil {
+		return true
+	}
+	return false
+}
+
+// removeAll deletes target recursively without following directory symlinks.
+// It is iterative so deep trees and SFTP servers that return "." / ".." cannot
+// overflow the goroutine stack (a recursive walk on "." would call itself forever).
+func removeAll(client sftpRemover, root string) error {
+	stack := []string{root}
+	seen := map[string]struct{}{root: {}}
+	var dirs []string
+
+	for len(stack) > 0 {
+		dir := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		dirs = append(dirs, dir)
+
+		entries, err := client.ReadDir(dir)
+		if err != nil {
+			return err
+		}
+		for _, e := range entries {
+			name := e.Name()
+			if name == "." || name == ".." {
+				continue
+			}
+			child := path.Join(dir, name)
+
+			info, err := client.Lstat(child)
+			if err != nil {
+				if os.IsNotExist(err) {
+					continue
+				}
+				return err
+			}
+
+			// Symlinks (even to directories) are removed as leaf nodes so cycles
+			// cannot pull the walk into another tree forever.
+			if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
+				if err := client.Remove(child); err != nil && !os.IsNotExist(err) {
+					return err
+				}
+				continue
+			}
+
+			if _, ok := seen[child]; ok {
+				continue
+			}
+			seen[child] = struct{}{}
+			stack = append(stack, child)
+		}
+	}
+
+	for i := len(dirs) - 1; i >= 0; i-- {
+		if err := client.RemoveDirectory(dirs[i]); err != nil && !os.IsNotExist(err) {
 			return err
 		}
 	}
-	return client.RemoveDirectory(target)
+	return nil
 }
 
 func (s *Service) Download(serverID, rawPath string) (name string, size int64, reader io.ReadCloser, cleanup func(), err error) {

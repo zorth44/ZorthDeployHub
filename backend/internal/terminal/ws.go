@@ -2,6 +2,7 @@ package terminal
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"sync"
@@ -59,17 +60,41 @@ func (h *WSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Printf("websocket upgrade failed: %v", err)
 		return
 	}
-	defer conn.Close()
 
 	connID := formatConnID(h.seq.Add(1))
-	defer h.manager.Close(connID)
+	var (
+		writeMu sync.Mutex
+		closed  atomic.Bool
+	)
+	closeConn := func() {
+		if !closed.CompareAndSwap(false, true) {
+			return
+		}
+		h.manager.Close(connID)
+		_ = conn.Close()
+	}
+	defer closeConn()
 
-	var writeMu sync.Mutex
 	writeJSON := func(msg outboundMessage) {
+		if closed.Load() {
+			return
+		}
 		writeMu.Lock()
 		defer writeMu.Unlock()
+		if closed.Load() {
+			return
+		}
 		if err := conn.WriteJSON(msg); err != nil {
-			log.Printf("websocket write failed: %v", err)
+			closed.Store(true)
+			// Peer/local close races are expected after navigation away from the
+			// terminal page; only log unexpected write failures.
+			if !errors.Is(err, websocket.ErrCloseSent) && !websocket.IsCloseError(err,
+				websocket.CloseNormalClosure,
+				websocket.CloseGoingAway,
+				websocket.CloseAbnormalClosure,
+			) {
+				log.Printf("websocket write failed: %v", err)
+			}
 		}
 	}
 
