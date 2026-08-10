@@ -8,6 +8,7 @@ import {
   type ServerRecord,
   type TagRecord,
 } from "../lib/api";
+import { useT } from "../i18n/useT";
 
 type FormState = {
   name: string;
@@ -40,6 +41,7 @@ export function ServerFormDialog({
   initial?: ServerRecord | null;
   onSaved: () => void;
 }) {
+  const t = useT();
   const [form, setForm] = useState<FormState>(emptyForm);
   const [groups, setGroups] = useState<GroupRecord[]>([]);
   const [tags, setTags] = useState<TagRecord[]>([]);
@@ -59,7 +61,7 @@ export function ServerFormDialog({
         setGroups(groupList);
         setTags(tagList);
       } catch {
-        setError("Failed to load groups/tags");
+        setError(t("serverForm.loadCatalogFailed"));
       }
     })();
 
@@ -71,14 +73,14 @@ export function ServerFormDialog({
         username: initial.username,
         remark: initial.remark ?? "",
         groupId: initial.groupId ?? "",
-        tagIds: (initial.tags ?? []).map((t) => t.id),
+        tagIds: (initial.tags ?? []).map((tag) => tag.id),
       });
     } else {
       setForm(emptyForm);
     }
     setNewTagName("");
     setError(null);
-  }, [open, initial]);
+  }, [open, initial, t]);
 
   if (!open) return null;
 
@@ -107,7 +109,9 @@ export function ServerFormDialog({
       setForm((s) => ({ ...s, tagIds: [...s.tagIds, tag.id] }));
       setNewTagName("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create tag");
+      setError(
+        err instanceof Error ? err.message : t("serverForm.createTagFailed"),
+      );
     }
   }
 
@@ -141,13 +145,15 @@ export function ServerFormDialog({
         const data = (await response.json().catch(() => null)) as {
           error?: string;
         } | null;
-        throw new Error(data?.error ?? "Failed to save server");
+        throw new Error(data?.error ?? t("serverForm.saveFailed"));
       }
 
       onOpenChange(false);
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save server");
+      setError(
+        err instanceof Error ? err.message : t("serverForm.saveFailed"),
+      );
     } finally {
       setSaving(false);
     }
@@ -157,10 +163,10 @@ export function ServerFormDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 shadow-2xl">
         <h2 className="mb-4 text-lg font-semibold">
-          {isEdit ? "Edit Server" : "Add Server"}
+          {isEdit ? t("serverForm.editTitle") : t("serverForm.addTitle")}
         </h2>
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
-          <Field label="Name">
+          <Field label={t("serverForm.name")}>
             <input
               value={form.name}
               onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
@@ -169,7 +175,7 @@ export function ServerFormDialog({
               className="field"
             />
           </Field>
-          <Field label="Host">
+          <Field label={t("serverForm.host")}>
             <input
               value={form.host}
               onChange={(e) => setForm((s) => ({ ...s, host: e.target.value }))}
@@ -179,7 +185,7 @@ export function ServerFormDialog({
             />
           </Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Port">
+            <Field label={t("serverForm.port")}>
               <input
                 type="number"
                 min={1}
@@ -190,7 +196,7 @@ export function ServerFormDialog({
                 className="field"
               />
             </Field>
-            <Field label="Username">
+            <Field label={t("serverForm.username")}>
               <input
                 value={form.username}
                 onChange={(e) =>
@@ -202,7 +208,7 @@ export function ServerFormDialog({
               />
             </Field>
           </div>
-          <Field label="Group">
+          <Field label={t("serverForm.group")}>
             <select
               value={form.groupId}
               onChange={(e) =>
@@ -210,7 +216,7 @@ export function ServerFormDialog({
               }
               className="field"
             >
-              <option value="">Ungrouped</option>
+              <option value="">{t("serverForm.ungrouped")}</option>
               {groups.map((group) => (
                 <option key={group.id} value={group.id}>
                   {group.name}
@@ -219,10 +225,10 @@ export function ServerFormDialog({
             </select>
           </Field>
           <div className="space-y-2 text-sm">
-            <span>Tags</span>
+            <span>{t("serverForm.tags")}</span>
             {tags.length === 0 ? (
               <p className="text-[var(--color-muted-foreground)]">
-                No tags yet. Create one below.
+                {t("serverForm.noTags")}
               </p>
             ) : (
               <div className="flex flex-wrap gap-2">
@@ -254,7 +260,7 @@ export function ServerFormDialog({
               <input
                 value={newTagName}
                 onChange={(e) => setNewTagName(e.target.value)}
-                placeholder="New tag name"
+                placeholder={t("serverForm.newTagPlaceholder")}
                 className="field"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -268,15 +274,15 @@ export function ServerFormDialog({
                 onClick={() => void handleCreateTag()}
                 className="shrink-0 rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:bg-[var(--color-muted)]"
               >
-                Add tag
+                {t("serverForm.addTag")}
               </button>
             </div>
           </div>
-          <Field label="Remark">
+          <Field label={t("serverForm.remark")}>
             <textarea
               value={form.remark}
               onChange={(e) => setForm((s) => ({ ...s, remark: e.target.value }))}
-              placeholder="Optional note"
+              placeholder={t("serverForm.remarkPlaceholder")}
               rows={3}
               className="field"
             />
@@ -290,14 +296,18 @@ export function ServerFormDialog({
               onClick={() => onOpenChange(false)}
               className="rounded-md px-3 py-2 text-sm text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
             >
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
               disabled={saving}
               className="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-[var(--color-primary-foreground)] disabled:opacity-60"
             >
-              {saving ? "Saving..." : isEdit ? "Save" : "Create"}
+              {saving
+                ? t("serverForm.saving")
+                : isEdit
+                  ? t("common.save")
+                  : t("common.create")}
             </button>
           </div>
         </form>

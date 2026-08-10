@@ -22,8 +22,10 @@ import {
 import { ServerFormDialog } from "../components/ServerFormDialog";
 import { CatalogManageDialog } from "../components/CatalogManageDialog";
 import { StatusDot } from "../components/StatusDot";
+import { useT } from "../i18n/useT";
 
 export function ServersPage() {
+  const t = useT();
   const [servers, setServers] = useState<ServerRecord[]>([]);
   const [groups, setGroups] = useState<GroupRecord[]>([]);
   const [tags, setTags] = useState<TagRecord[]>([]);
@@ -53,9 +55,9 @@ export function ServersPage() {
     try {
       setServers(await fetchServers());
     } catch {
-      setError("Failed to load servers");
+      setError(t("servers.loadFailed"));
     }
-  }, []);
+  }, [t]);
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -86,7 +88,7 @@ export function ServersPage() {
         if (server.groupId !== selectedGroupId) return false;
       }
       if (selectedTagIds.length > 0) {
-        const serverTagIds = new Set((server.tags ?? []).map((t) => t.id));
+        const serverTagIds = new Set((server.tags ?? []).map((tag) => tag.id));
         if (!selectedTagIds.every((id) => serverTagIds.has(id))) return false;
       }
       return true;
@@ -102,17 +104,19 @@ export function ServersPage() {
   }
 
   async function handleDelete(server: ServerRecord) {
-    if (!window.confirm(`Delete server "${server.name}"?`)) return;
+    if (!window.confirm(t("servers.deleteConfirm", { name: server.name }))) {
+      return;
+    }
     setDeletingId(server.id);
     try {
       const response = await fetch(`/api/servers/${server.id}`, {
         method: "DELETE",
         credentials: "include",
       });
-      if (!response.ok) throw new Error("Failed to delete");
+      if (!response.ok) throw new Error(t("servers.deleteFailed"));
       await refreshServers();
     } catch {
-      window.alert("Failed to delete server");
+      window.alert(t("servers.deleteFailed"));
     } finally {
       setDeletingId(null);
     }
@@ -122,9 +126,11 @@ export function ServersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Servers</h1>
+          <h1 className="text-xl font-semibold tracking-tight">
+            {t("servers.title")}
+          </h1>
           <p className="text-sm text-[var(--color-muted-foreground)]">
-            Group hosts by environment and tag them by role.
+            {t("servers.subtitle")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -134,7 +140,7 @@ export function ServersPage() {
             className="inline-flex items-center gap-2 rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:bg-[var(--color-muted)]"
           >
             <Layers className="size-4" />
-            Groups
+            {t("servers.groups")}
           </button>
           <button
             type="button"
@@ -142,7 +148,7 @@ export function ServersPage() {
             className="inline-flex items-center gap-2 rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:bg-[var(--color-muted)]"
           >
             <Tags className="size-4" />
-            Tags
+            {t("servers.tags")}
           </button>
           <button
             type="button"
@@ -153,7 +159,7 @@ export function ServersPage() {
             className="inline-flex items-center gap-2 rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-[var(--color-primary-foreground)]"
           >
             <Plus className="size-4" />
-            Add Server
+            {t("servers.addServer")}
           </button>
         </div>
       </div>
@@ -161,18 +167,18 @@ export function ServersPage() {
       <div className="space-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]/60 p-4">
         <div className="space-y-2">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
-            Group
+            {t("servers.group")}
           </p>
           <div className="flex flex-wrap gap-2">
             <FilterChip
               active={selectedGroupId === "all"}
               onClick={() => setSelectedGroupId("all")}
-              label="All"
+              label={t("servers.all")}
             />
             <FilterChip
               active={selectedGroupId === "ungrouped"}
               onClick={() => setSelectedGroupId("ungrouped")}
-              label="Ungrouped"
+              label={t("servers.ungrouped")}
             />
             {groups.map((group) => (
               <FilterChip
@@ -188,7 +194,7 @@ export function ServersPage() {
         {tags.length > 0 ? (
           <div className="space-y-2">
             <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-foreground)]">
-              Tags
+              {t("servers.tags")}
             </p>
             <div className="flex flex-wrap gap-2">
               {tags.map((tag) => (
@@ -206,7 +212,7 @@ export function ServersPage() {
                   onClick={() => setSelectedTagIds([])}
                   className="text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
                 >
-                  Clear tags
+                  {t("servers.clearTags")}
                 </button>
               ) : null}
             </div>
@@ -220,16 +226,16 @@ export function ServersPage() {
 
       {servers.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-6">
-          <h2 className="font-medium">No servers yet</h2>
+          <h2 className="font-medium">{t("servers.emptyTitle")}</h2>
           <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
-            Add your first SSH target to start opening terminals.
+            {t("servers.emptyHint")}
           </p>
         </div>
       ) : filteredServers.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-6">
-          <h2 className="font-medium">No matching servers</h2>
+          <h2 className="font-medium">{t("servers.noMatchTitle")}</h2>
           <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
-            Try another group or clear the tag filters.
+            {t("servers.noMatchHint")}
           </p>
         </div>
       ) : (
@@ -295,14 +301,14 @@ export function ServersPage() {
                     className="inline-flex items-center gap-2 rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-[var(--color-primary-foreground)]"
                   >
                     <Terminal className="size-4" />
-                    Open
+                    {t("servers.open")}
                   </Link>
                   <Link
                     to={filesHref}
                     className="inline-flex items-center gap-2 rounded-md border border-[var(--color-border)] px-3 py-2 text-sm hover:bg-[var(--color-muted)]"
                   >
                     <FolderOpen className="size-4" />
-                    Files
+                    {t("servers.files")}
                   </Link>
                   <button
                     type="button"
@@ -311,7 +317,7 @@ export function ServersPage() {
                       setEditing(server);
                       setDialogOpen(true);
                     }}
-                    aria-label={`Edit ${server.name}`}
+                    aria-label={t("common.edit", { name: server.name })}
                   >
                     <Pencil className="size-4" />
                   </button>
@@ -320,7 +326,7 @@ export function ServersPage() {
                     className="rounded-md border border-[var(--color-border)] p-2 hover:bg-[var(--color-muted)] disabled:opacity-50"
                     onClick={() => void handleDelete(server)}
                     disabled={deletingId === server.id}
-                    aria-label={`Delete ${server.name}`}
+                    aria-label={t("common.delete", { name: server.name })}
                   >
                     <Trash2 className="size-4" />
                   </button>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 import {
   COLOR_PRESETS,
@@ -13,6 +13,7 @@ import {
   type GroupRecord,
   type TagRecord,
 } from "../lib/api";
+import { useT } from "../i18n/useT";
 import { ColorSwatches } from "./ColorSwatches";
 
 type Kind = "groups" | "tags";
@@ -28,6 +29,7 @@ export function CatalogManageDialog({
   onOpenChange: (open: boolean) => void;
   onChanged: () => void;
 }) {
+  const t = useT();
   const [items, setItems] = useState<Array<GroupRecord | TagRecord>>([]);
   const [name, setName] = useState("");
   const [color, setColor] = useState<string>(COLOR_PRESETS[0]);
@@ -35,19 +37,25 @@ export function CatalogManageDialog({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const title = kind === "groups" ? "Manage Groups" : "Manage Tags";
+  const title =
+    kind === "groups" ? t("catalog.manageGroups") : t("catalog.manageTags");
   const emptyHint =
-    kind === "groups"
-      ? "Create groups like Production or Development."
-      : "Create tags like Gateway or Registry.";
+    kind === "groups" ? t("catalog.emptyGroups") : t("catalog.emptyTags");
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     try {
       setItems(kind === "groups" ? await fetchGroups() : await fetchTags());
     } catch {
-      setError(`Failed to load ${kind}`);
+      setError(
+        t("catalog.loadFailed", {
+          kind:
+            kind === "groups"
+              ? t("catalog.kind.groups")
+              : t("catalog.kind.tags"),
+        }),
+      );
     }
-  }
+  }, [kind, t]);
 
   useEffect(() => {
     if (!open) return;
@@ -56,7 +64,7 @@ export function CatalogManageDialog({
     setEditingId(null);
     setError(null);
     void refresh();
-  }, [open, kind]);
+  }, [open, kind, refresh]);
 
   if (!open) return null;
 
@@ -92,15 +100,22 @@ export function CatalogManageDialog({
       await refresh();
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
+      setError(err instanceof Error ? err.message : t("catalog.saveFailed"));
     } finally {
       setBusy(false);
     }
   }
 
   async function handleDelete(item: GroupRecord | TagRecord) {
-    const label = kind === "groups" ? "group" : "tag";
-    if (!window.confirm(`Delete ${label} "${item.name}"?`)) return;
+    const label =
+      kind === "groups" ? t("catalog.groupLabel") : t("catalog.tagLabel");
+    if (
+      !window.confirm(
+        t("catalog.deleteConfirm", { label, name: item.name }),
+      )
+    ) {
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -110,7 +125,7 @@ export function CatalogManageDialog({
       await refresh();
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed");
+      setError(err instanceof Error ? err.message : t("catalog.deleteFailed"));
     } finally {
       setBusy(false);
     }
@@ -125,7 +140,7 @@ export function CatalogManageDialog({
             type="button"
             onClick={() => onOpenChange(false)}
             className="rounded-md p-1.5 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
-            aria-label="Close"
+            aria-label={t("common.close")}
           >
             <X className="size-4" />
           </button>
@@ -134,17 +149,23 @@ export function CatalogManageDialog({
         <div className="space-y-4 overflow-y-auto p-5">
           <form onSubmit={(e) => void handleSubmit(e)} className="space-y-3">
             <label className="block space-y-2 text-sm">
-              <span>{editingId ? "Edit name" : "New name"}</span>
+              <span>
+                {editingId ? t("catalog.editName") : t("catalog.newName")}
+              </span>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder={kind === "groups" ? "Production" : "Gateway"}
+                placeholder={
+                  kind === "groups"
+                    ? t("catalog.placeholder.group")
+                    : t("catalog.placeholder.tag")
+                }
                 className="field"
                 required
               />
             </label>
             <div className="space-y-2 text-sm">
-              <span>Color</span>
+              <span>{t("catalog.color")}</span>
               <ColorSwatches value={color} onChange={setColor} />
             </div>
             <div className="flex gap-2">
@@ -154,7 +175,7 @@ export function CatalogManageDialog({
                 className="inline-flex items-center gap-2 rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-[var(--color-primary-foreground)] disabled:opacity-60"
               >
                 <Plus className="size-4" />
-                {editingId ? "Save" : "Create"}
+                {editingId ? t("common.save") : t("common.create")}
               </button>
               {editingId ? (
                 <button
@@ -162,7 +183,7 @@ export function CatalogManageDialog({
                   onClick={resetForm}
                   className="rounded-md px-3 py-2 text-sm text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
                 >
-                  Cancel edit
+                  {t("catalog.cancelEdit")}
                 </button>
               ) : null}
             </div>
@@ -195,7 +216,7 @@ export function CatalogManageDialog({
                       type="button"
                       onClick={() => startEdit(item)}
                       className="rounded-md border border-[var(--color-border)] p-1.5 hover:bg-[var(--color-muted)]"
-                      aria-label={`Edit ${item.name}`}
+                      aria-label={t("common.edit", { name: item.name })}
                     >
                       <Pencil className="size-3.5" />
                     </button>
@@ -204,7 +225,7 @@ export function CatalogManageDialog({
                       onClick={() => void handleDelete(item)}
                       disabled={busy}
                       className="rounded-md border border-[var(--color-border)] p-1.5 hover:bg-[var(--color-muted)] disabled:opacity-50"
-                      aria-label={`Delete ${item.name}`}
+                      aria-label={t("common.delete", { name: item.name })}
                     >
                       <Trash2 className="size-3.5" />
                     </button>

@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/auth";
+import { useT } from "./i18n/useT";
 import { LoginPage } from "./pages/LoginPage";
 import { ServersPage } from "./pages/ServersPage";
 import { TerminalPage } from "./pages/TerminalPage";
@@ -8,10 +9,11 @@ import { AppShell } from "./components/AppShell";
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const t = useT();
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-[var(--color-muted-foreground)]">
-        Loading...
+        {t("common.loading")}
       </div>
     );
   }

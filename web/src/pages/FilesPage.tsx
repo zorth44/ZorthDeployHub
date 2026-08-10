@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
+  ArrowLeft,
   Download,
   FolderPlus,
   HardDrive,
@@ -20,6 +21,7 @@ import {
   type ServerRecord,
   type SftpEntry,
 } from "../lib/api";
+import { useT } from "../i18n/useT";
 
 function formatSize(bytes: number, isDir: boolean): string {
   if (isDir) return "—";
@@ -51,6 +53,7 @@ function breadcrumbParts(currentPath: string): { label: string; path: string }[]
 }
 
 export function FilesPage() {
+  const t = useT();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -75,8 +78,8 @@ export function FilesPage() {
         }
         if (list[0]) setServerId(list[0].id);
       })
-      .catch(() => setError("Failed to load servers"));
-  }, [searchParams]);
+      .catch(() => setError(t("files.loadServersFailed")));
+  }, [searchParams, t]);
 
   const selectedServer = useMemo(
     () => servers.find((s) => s.id === serverId) ?? null,
@@ -93,12 +96,12 @@ export function FilesPage() {
         setPath(result.path);
         setEntries(result.entries);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to list directory");
+        setError(err instanceof Error ? err.message : t("files.listFailed"));
       } finally {
         setLoading(false);
       }
     },
-    [path, serverId],
+    [path, serverId, t],
   );
 
   useEffect(() => {
@@ -114,7 +117,7 @@ export function FilesPage() {
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Failed to list directory");
+        setError(err instanceof Error ? err.message : t("files.listFailed"));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -122,7 +125,7 @@ export function FilesPage() {
     return () => {
       cancelled = true;
     };
-  }, [serverId]);
+  }, [serverId, t]);
 
   async function openEntry(entry: SftpEntry) {
     if (!entry.isDir) return;
@@ -131,7 +134,7 @@ export function FilesPage() {
 
   async function handleMkdir() {
     if (!serverId || !path) return;
-    const name = window.prompt("New folder name");
+    const name = window.prompt(t("files.mkdirPrompt"));
     if (!name?.trim()) return;
     const target = `${path.replace(/\/$/, "")}/${name.trim()}`;
     setBusyName(name.trim());
@@ -139,7 +142,7 @@ export function FilesPage() {
       await mkdirSftp(serverId, target);
       await refresh(path);
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "Failed to create folder");
+      window.alert(err instanceof Error ? err.message : t("files.mkdirFailed"));
     } finally {
       setBusyName(null);
     }
@@ -147,14 +150,16 @@ export function FilesPage() {
 
   async function handleDelete(entry: SftpEntry) {
     if (!serverId || entry.name === "..") return;
-    const label = entry.isDir ? `folder "${entry.name}" and all contents` : `file "${entry.name}"`;
-    if (!window.confirm(`Delete ${label}?`)) return;
+    const confirmMsg = entry.isDir
+      ? t("files.deleteFolderConfirm", { name: entry.name })
+      : t("files.deleteFileConfirm", { name: entry.name });
+    if (!window.confirm(confirmMsg)) return;
     setBusyName(entry.name);
     try {
       await deleteSftp(serverId, entry.path, entry.isDir);
       await refresh(path);
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "Failed to delete");
+      window.alert(err instanceof Error ? err.message : t("files.deleteFailed"));
     } finally {
       setBusyName(null);
     }
@@ -166,7 +171,7 @@ export function FilesPage() {
     try {
       await downloadSftp(serverId, entry.path);
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "Failed to download");
+      window.alert(err instanceof Error ? err.message : t("files.downloadFailed"));
     } finally {
       setBusyName(null);
     }
@@ -180,7 +185,7 @@ export function FilesPage() {
         const exists = await sftpExists(serverId, path, file.name);
         if (exists) {
           const ok = window.confirm(
-            `"${file.name}" already exists. Overwrite it?`,
+            t("files.overwriteConfirm", { name: file.name }),
           );
           if (!ok) continue;
         }
@@ -188,7 +193,7 @@ export function FilesPage() {
         setBusyName(file.name);
         await uploadSftp(serverId, path, file, setUploadPct);
       } catch (err) {
-        window.alert(err instanceof Error ? err.message : "Upload failed");
+        window.alert(err instanceof Error ? err.message : t("files.uploadFailed"));
         break;
       } finally {
         setBusyName(null);
@@ -204,11 +209,24 @@ export function FilesPage() {
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Files</h1>
-          <p className="text-sm text-[var(--color-muted-foreground)]">
-            Browse, upload, and download over SFTP with the shared SSH key.
-          </p>
+        <div className="space-y-2">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+          >
+            <ArrowLeft className="size-4" />
+            {t("common.backToServers")}
+          </Link>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">
+              {selectedServer
+                ? `${selectedServer.name} · ${t("files.title")}`
+                : t("files.title")}
+            </h1>
+            <p className="text-sm text-[var(--color-muted-foreground)]">
+              {t("files.subtitle")}
+            </p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]">
@@ -225,7 +243,7 @@ export function FilesPage() {
               className="rounded-md border border-[var(--color-border)] bg-[var(--color-input)] px-2 py-1.5 text-[var(--color-foreground)]"
             >
               {servers.length === 0 ? (
-                <option value="">No servers</option>
+                <option value="">{t("files.noServersOption")}</option>
               ) : (
                 servers.map((server) => (
                   <option key={server.id} value={server.id}>
@@ -242,7 +260,7 @@ export function FilesPage() {
             className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] px-3 py-1.5 text-sm hover:bg-[var(--color-muted)] disabled:opacity-50"
           >
             <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
+            {t("files.refresh")}
           </button>
           <button
             type="button"
@@ -251,7 +269,7 @@ export function FilesPage() {
             className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] px-3 py-1.5 text-sm hover:bg-[var(--color-muted)] disabled:opacity-50"
           >
             <FolderPlus className="size-4" />
-            New folder
+            {t("files.newFolder")}
           </button>
           <button
             type="button"
@@ -260,7 +278,7 @@ export function FilesPage() {
             className="inline-flex items-center gap-1.5 rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-sm font-medium text-[var(--color-primary-foreground)] disabled:opacity-50"
           >
             <Upload className="size-4" />
-            Upload
+            {t("files.upload")}
           </button>
           <input
             ref={fileInputRef}
@@ -297,7 +315,7 @@ export function FilesPage() {
 
       {uploadPct !== null ? (
         <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-sm">
-          Uploading {busyName}… {uploadPct}%
+          {t("files.uploading", { name: busyName ?? "", pct: uploadPct })}
           <div className="mt-2 h-1.5 overflow-hidden rounded bg-[var(--color-muted)]">
             <div
               className="h-full bg-[var(--color-primary)] transition-all"
@@ -314,23 +332,23 @@ export function FilesPage() {
       <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]">
         {!serverId ? (
           <div className="p-6 text-sm text-[var(--color-muted-foreground)]">
-            Add a server first, then open Files.
+            {t("files.noServer")}
           </div>
         ) : loading && entries.length === 0 ? (
           <div className="flex items-center gap-2 p-6 text-sm text-[var(--color-muted-foreground)]">
             <LoaderCircle className="size-4 animate-spin" />
-            Loading…
+            {t("files.loading")}
           </div>
         ) : (
           <table className="w-full text-left text-sm">
             <thead className="sticky top-0 bg-[var(--color-card)] text-[var(--color-muted-foreground)]">
               <tr className="border-b border-[var(--color-border)]">
-                <th className="px-4 py-2 font-medium">Name</th>
-                <th className="px-4 py-2 font-medium">Size</th>
+                <th className="px-4 py-2 font-medium">{t("files.name")}</th>
+                <th className="px-4 py-2 font-medium">{t("files.size")}</th>
                 <th className="hidden px-4 py-2 font-medium sm:table-cell">
-                  Modified
+                  {t("files.modified")}
                 </th>
-                <th className="px-4 py-2 font-medium">Actions</th>
+                <th className="px-4 py-2 font-medium">{t("files.actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -366,7 +384,7 @@ export function FilesPage() {
                           className="rounded-md border border-[var(--color-border)] p-1.5 hover:bg-[var(--color-muted)] disabled:opacity-50"
                           disabled={busyName === entry.name}
                           onClick={() => void handleDownload(entry)}
-                          aria-label={`Download ${entry.name}`}
+                          aria-label={t("files.download", { name: entry.name })}
                         >
                           <Download className="size-4" />
                         </button>
@@ -377,7 +395,7 @@ export function FilesPage() {
                           className="rounded-md border border-[var(--color-border)] p-1.5 hover:bg-[var(--color-muted)] disabled:opacity-50"
                           disabled={busyName === entry.name}
                           onClick={() => void handleDelete(entry)}
-                          aria-label={`Delete ${entry.name}`}
+                          aria-label={t("common.delete", { name: entry.name })}
                         >
                           <Trash2 className="size-4" />
                         </button>
@@ -392,7 +410,7 @@ export function FilesPage() {
                     colSpan={4}
                     className="px-4 py-8 text-center text-[var(--color-muted-foreground)]"
                   >
-                    Empty directory
+                    {t("files.emptyDir")}
                   </td>
                 </tr>
               ) : null}
