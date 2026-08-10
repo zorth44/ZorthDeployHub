@@ -333,45 +333,45 @@ func removeAll(client sftpRemover, root string) error {
 	return nil
 }
 
-func (s *Service) Download(serverID, rawPath string) (name string, size int64, reader io.ReadCloser, cleanup func(), err error) {
+func (s *Service) Download(serverID, rawPath string) (string, int64, io.ReadCloser, func(), error) {
 	_, sess, err := s.open(serverID)
 	if err != nil {
 		return "", 0, nil, nil, err
 	}
 
-	cleanup = sess.Close
+	closeSess := sess.Close
 	target, err := resolvePath(sess.sftp, rawPath)
 	if err != nil {
-		cleanup()
+		closeSess()
 		return "", 0, nil, nil, err
 	}
 
 	info, err := sess.sftp.Stat(target)
 	if err != nil {
-		cleanup()
+		closeSess()
 		if os.IsNotExist(err) {
 			return "", 0, nil, nil, ErrNotFound
 		}
 		return "", 0, nil, nil, err
 	}
 	if info.IsDir() {
-		cleanup()
+		closeSess()
 		return "", 0, nil, nil, ErrIsDir
 	}
 	if info.Size() > s.maxUploadBytes {
-		cleanup()
+		closeSess()
 		return "", 0, nil, nil, ErrTooLarge
 	}
 
 	f, err := sess.sftp.Open(target)
 	if err != nil {
-		cleanup()
+		closeSess()
 		return "", 0, nil, nil, err
 	}
 
 	return path.Base(target), info.Size(), f, func() {
 		_ = f.Close()
-		cleanup()
+		closeSess()
 	}, nil
 }
 
