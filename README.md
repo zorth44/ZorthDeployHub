@@ -79,6 +79,5 @@ CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o ../zorth-deploy-hub ./cmd/s
 
 - Shared credentials login
 - Server CRUD
-- Online status (TCP probe ~30s)
 - Multi-tab Web Terminal (xterm.js + WebSocket + Go SSH)
 - PTY resize / interactive tools (`vim`, `top`, `less`)

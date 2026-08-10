@@ -14,10 +14,6 @@ export const en = {
   "common.lang.en": "EN",
   "common.lang.toggle": "Language",
 
-  "status.online": "online",
-  "status.offline": "offline",
-  "status.unknown": "unknown",
-
   "login.subtitle": "Team SSH access through the browser.",
   "login.username": "Username",
   "login.password": "Password",
@@ -44,7 +40,7 @@ export const en = {
 
   "servers.title": "Servers",
   "servers.eyebrow": "Infrastructure",
-  "servers.subtitle": "Monitor and access every SSH target from one workspace.",
+  "servers.subtitle": "Organize and access every SSH target from one workspace.",
   "servers.groups": "Groups",
   "servers.tags": "Tags",
   "servers.addServer": "Add Server",
@@ -54,9 +50,6 @@ export const en = {
   "servers.clearTags": "Clear tags",
   "servers.search": "Search servers, hosts, or tags...",
   "servers.filters": "Filters",
-  "servers.total": "Total hosts",
-  "servers.online": "Online",
-  "servers.offline": "Offline",
   "servers.showing": "Showing {count} of {total} servers",
   "servers.moreActions": "More actions for {name}",
   "servers.loadFailed": "Failed to load servers",

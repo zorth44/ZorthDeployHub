@@ -26,8 +26,6 @@ export type ServerRecord = {
   tags: TagRecord[];
 };
 
-export type OnlineStatus = "online" | "offline" | "unknown";
-
 export const COLOR_PRESETS = [
   "#64748b",
   "#0ea5e9",
@@ -73,12 +71,6 @@ export async function fetchServers(): Promise<ServerRecord[]> {
     group: server.group ?? null,
     tags: server.tags ?? [],
   }));
-}
-
-export async function fetchStatus(): Promise<Record<string, OnlineStatus>> {
-  const res = await fetch("/api/servers/status", { credentials: "include" });
-  if (!res.ok) throw new Error("Failed to load status");
-  return (await res.json()) as Record<string, OnlineStatus>;
 }
 
 export async function fetchGroups(): Promise<GroupRecord[]> {

@@ -64,7 +64,6 @@ func (a *API) Handler() http.Handler {
 			pr.Post("/servers", a.handleCreateServer)
 			pr.Put("/servers/{id}", a.handleUpdateServer)
 			pr.Delete("/servers/{id}", a.handleDeleteServer)
-			pr.Get("/servers/status", a.handleStatus)
 
 			pr.Get("/groups", a.handleListGroups)
 			pr.Post("/groups", a.handleCreateGroup)
@@ -212,15 +211,6 @@ func (a *API) handleDeleteServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
-}
-
-func (a *API) handleStatus(w http.ResponseWriter, r *http.Request) {
-	list, err := a.store.List()
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to list servers"})
-		return
-	}
-	writeJSON(w, http.StatusOK, servers.ProbeAll(list))
 }
 
 func (a *API) handleListGroups(w http.ResponseWriter, r *http.Request) {

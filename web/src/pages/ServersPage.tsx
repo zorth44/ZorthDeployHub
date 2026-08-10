@@ -18,16 +18,13 @@ import {
 import {
   fetchGroups,
   fetchServers,
-  fetchStatus,
   fetchTags,
   type GroupRecord,
-  type OnlineStatus,
   type ServerRecord,
   type TagRecord,
 } from "../lib/api";
 import { ServerFormDialog } from "../components/ServerFormDialog";
 import { CatalogManageDialog } from "../components/CatalogManageDialog";
-import { StatusDot } from "../components/StatusDot";
 import { useT } from "../i18n/useT";
 
 export function ServersPage() {
@@ -35,7 +32,6 @@ export function ServersPage() {
   const [servers, setServers] = useState<ServerRecord[]>([]);
   const [groups, setGroups] = useState<GroupRecord[]>([]);
   const [tags, setTags] = useState<TagRecord[]>([]);
-  const [statusMap, setStatusMap] = useState<Record<string, OnlineStatus>>({});
   const [selectedGroupId, setSelectedGroupId] = useState<string | "all">("all");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [query, setQuery] = useState("");
@@ -64,24 +60,10 @@ export function ServersPage() {
     }
   }, [t]);
 
-  const refreshStatus = useCallback(async () => {
-    try {
-      setStatusMap(await fetchStatus());
-    } catch {
-      // Ignore transient probe failures.
-    }
-  }, []);
-
   useEffect(() => {
     void refreshServers();
     void refreshCatalog();
   }, [refreshServers, refreshCatalog]);
-
-  useEffect(() => {
-    void refreshStatus();
-    const timer = setInterval(() => void refreshStatus(), 30_000);
-    return () => clearInterval(timer);
-  }, [refreshStatus, servers.length]);
 
   const filteredServers = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -113,9 +95,6 @@ export function ServersPage() {
       return true;
     });
   }, [servers, selectedGroupId, selectedTagIds, query]);
-
-  const onlineCount = servers.filter((server) => statusMap[server.id] === "online").length;
-  const offlineCount = servers.filter((server) => statusMap[server.id] === "offline").length;
 
   function toggleTagFilter(tagId: string) {
     setSelectedTagIds((prev) =>
@@ -175,13 +154,7 @@ export function ServersPage() {
         </div>
       </div>
 
-      <div className="mt-7 grid grid-cols-3 gap-2 sm:gap-3">
-        <StatCard label={t("servers.total")} value={servers.length} tone="neutral" />
-        <StatCard label={t("servers.online")} value={onlineCount} tone="online" />
-        <StatCard label={t("servers.offline")} value={offlineCount} tone="offline" />
-      </div>
-
-      <section className="surface mt-4 overflow-hidden" aria-label={t("servers.filters")}>
+      <section className="surface mt-7 overflow-hidden" aria-label={t("servers.filters")}>
         <div className="border-b border-[var(--color-border)] p-3 sm:p-4">
           <div className="relative max-w-xl">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--color-muted-foreground)]" />
@@ -289,7 +262,6 @@ export function ServersPage() {
             <ServerRow
               key={server.id}
               server={server}
-              status={statusMap[server.id] ?? "unknown"}
               deleting={deletingId === server.id}
               onEdit={() => {
                 setEditing(server);
@@ -325,19 +297,6 @@ export function ServersPage() {
   );
 }
 
-function StatCard({ label, value, tone }: { label: string; value: number; tone: "neutral" | "online" | "offline" }) {
-  const toneClass = tone === "online" ? "bg-emerald-400" : tone === "offline" ? "bg-red-400" : "bg-sky-400";
-  return (
-    <div className="surface flex min-w-0 items-center gap-3 px-3 py-3.5 sm:px-4">
-      <span className={`hidden size-2 rounded-full shadow-[0_0_12px_currentColor] sm:block ${toneClass}`} />
-      <div className="min-w-0">
-        <p className="truncate text-[10px] uppercase tracking-[0.12em] text-[var(--color-muted-foreground)] sm:text-[11px]">{label}</p>
-        <p className="mt-0.5 font-mono text-xl font-semibold tabular-nums sm:text-2xl">{value}</p>
-      </div>
-    </div>
-  );
-}
-
 function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
@@ -347,7 +306,7 @@ function FilterGroup({ label, children }: { label: string; children: React.React
   );
 }
 
-function ServerRow({ server, status, deleting, onEdit, onDelete }: { server: ServerRecord; status: OnlineStatus; deleting: boolean; onEdit: () => void; onDelete: () => void }) {
+function ServerRow({ server, deleting, onEdit, onDelete }: { server: ServerRecord; deleting: boolean; onEdit: () => void; onDelete: () => void }) {
   const t = useT();
   const openHref = `/terminal?${new URLSearchParams({ serverId: server.id, name: server.name }).toString()}`;
   const filesHref = `/files?${new URLSearchParams({ serverId: server.id }).toString()}`;
@@ -359,7 +318,6 @@ function ServerRow({ server, status, deleting, onEdit, onDelete }: { server: Ser
           <div className="flex flex-wrap items-center gap-2.5">
             <h2 className="truncate text-[15px] font-semibold tracking-[-0.01em] sm:text-base">{server.name}</h2>
             {server.group ? <CatalogBadge label={server.group.name} color={server.group.color} /> : null}
-            <StatusDot status={status} showLabel />
           </div>
           <p className="mt-2 truncate font-mono text-xs text-[#96a7b8] sm:text-[13px]">
             {server.username}<span className="text-[#536272]">@</span>{server.host}<span className="text-[#536272]">:</span>{server.port}

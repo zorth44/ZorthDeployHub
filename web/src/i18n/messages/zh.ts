@@ -16,10 +16,6 @@ export const zh: Record<MessageKey, string> = {
   "common.lang.en": "EN",
   "common.lang.toggle": "语言",
 
-  "status.online": "在线",
-  "status.offline": "离线",
-  "status.unknown": "未知",
-
   "login.subtitle": "通过浏览器进行团队 SSH 访问。",
   "login.username": "用户名",
   "login.password": "密码",
@@ -46,7 +42,7 @@ export const zh: Record<MessageKey, string> = {
 
   "servers.title": "服务器",
   "servers.eyebrow": "基础设施",
-  "servers.subtitle": "在一个工作区中监控并访问所有 SSH 主机。",
+  "servers.subtitle": "在一个工作区中整理并访问所有 SSH 主机。",
   "servers.groups": "分组",
   "servers.tags": "标签",
   "servers.addServer": "添加服务器",
@@ -56,9 +52,6 @@ export const zh: Record<MessageKey, string> = {
   "servers.clearTags": "清除标签",
   "servers.search": "搜索服务器、主机或标签…",
   "servers.filters": "筛选",
-  "servers.total": "主机总数",
-  "servers.online": "在线",
-  "servers.offline": "离线",
   "servers.showing": "显示 {count} / {total} 台服务器",
   "servers.moreActions": "{name} 的更多操作",
   "servers.loadFailed": "加载服务器失败",

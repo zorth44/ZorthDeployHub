@@ -12,12 +12,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { StatusDot } from "@/components/servers/status-dot";
 import {
   ServerFormDialog,
   type ServerRecord,
 } from "@/components/servers/server-form-dialog";
-import type { OnlineStatus } from "@/lib/server-status";
 
 export function ServerList({
   initialServers,
@@ -26,7 +24,6 @@ export function ServerList({
 }) {
   const router = useRouter();
   const [servers, setServers] = useState(initialServers);
-  const [statusMap, setStatusMap] = useState<Record<string, OnlineStatus>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ServerRecord | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -38,24 +35,9 @@ export function ServerList({
     setServers(data);
   }, []);
 
-  const refreshStatus = useCallback(async () => {
-    const response = await fetch("/api/servers/status");
-    if (!response.ok) return;
-    const data = (await response.json()) as Record<string, OnlineStatus>;
-    setStatusMap(data);
-  }, []);
-
   useEffect(() => {
     setServers(initialServers);
   }, [initialServers]);
-
-  useEffect(() => {
-    void refreshStatus();
-    const timer = setInterval(() => {
-      void refreshStatus();
-    }, 30_000);
-    return () => clearInterval(timer);
-  }, [refreshStatus, servers.length]);
 
   function openCreate() {
     setEditing(null);
@@ -129,7 +111,6 @@ export function ServerList({
                 <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0 space-y-1">
                     <div className="flex items-center gap-2">
-                      <StatusDot status={statusMap[server.id] ?? "unknown"} />
                       <h2 className="truncate font-medium">{server.name}</h2>
                     </div>
                     <p className="font-mono text-sm text-muted-foreground">
