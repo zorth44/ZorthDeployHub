@@ -309,7 +309,7 @@ function FilterGroup({ label, children }: { label: string; children: React.React
 function ServerRow({ server, deleting, onEdit, onDelete }: { server: ServerRecord; deleting: boolean; onEdit: () => void; onDelete: () => void }) {
   const t = useT();
   const openHref = `/terminal?${new URLSearchParams({ serverId: server.id, name: server.name }).toString()}`;
-  const filesHref = `/files?${new URLSearchParams({ serverId: server.id }).toString()}`;
+  const filesHref = `/terminal?${new URLSearchParams({ serverId: server.id, name: server.name, files: "1" }).toString()}`;
 
   return (
     <article className="group rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]/78 p-4 shadow-[0_1px_0_rgba(255,255,255,0.02)_inset] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-card)] sm:p-5">

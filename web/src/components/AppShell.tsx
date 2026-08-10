@@ -1,5 +1,4 @@
 import {
-  FolderTree,
   LogOut,
   Server,
   ShieldCheck,
@@ -38,12 +37,6 @@ const navigation = [
     icon: SquareTerminal,
     end: false,
   },
-  {
-    to: "/files",
-    key: "shell.nav.files" as const,
-    icon: FolderTree,
-    end: false,
-  },
 ];
 
 function Navigation({ compact = false }: { compact?: boolean }) {
@@ -51,7 +44,7 @@ function Navigation({ compact = false }: { compact?: boolean }) {
   return (
     <nav
       aria-label={t("shell.nav.label")}
-      className={compact ? "grid grid-cols-3 gap-1" : "space-y-1"}
+      className={compact ? "grid grid-cols-2 gap-1" : "space-y-1"}
     >
       {navigation.map(({ to, key, icon: Icon, end }) => (
         <NavLink

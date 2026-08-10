@@ -1,10 +1,10 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { useT } from "./i18n/useT";
 import { LoginPage } from "./pages/LoginPage";
 import { ServersPage } from "./pages/ServersPage";
-import { TerminalPage } from "./pages/TerminalPage";
-import { FilesPage } from "./pages/FilesPage";
+import { TerminalWorkspace } from "./components/TerminalWorkspace";
 import { AppShell } from "./components/AppShell";
 
 function Protected({ children }: { children: React.ReactNode }) {
@@ -29,37 +29,42 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route
-          path="/"
+          path="/*"
           element={
             <Protected>
-              <AppShell>
-                <ServersPage />
-              </AppShell>
+              <Workspace />
             </Protected>
           }
         />
-        <Route
-          path="/terminal"
-          element={
-            <Protected>
-              <AppShell fullHeight>
-                <TerminalPage />
-              </AppShell>
-            </Protected>
-          }
-        />
-        <Route
-          path="/files"
-          element={
-            <Protected>
-              <AppShell fullHeight>
-                <FilesPage />
-              </AppShell>
-            </Protected>
-          }
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
+  );
+}
+
+function Workspace() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const terminalVisible = location.pathname === "/terminal" || location.pathname === "/files";
+  const serversVisible = location.pathname === "/";
+
+  useEffect(() => {
+    if (location.pathname === "/files") {
+      const params = new URLSearchParams(location.search);
+      params.set("files", "1");
+      navigate(`/terminal?${params.toString()}`, { replace: true });
+    } else if (!serversVisible && !terminalVisible) {
+      navigate("/", { replace: true });
+    }
+  }, [location.pathname, location.search, navigate, serversVisible, terminalVisible]);
+
+  return (
+    <AppShell fullHeight>
+      <div className={serversVisible ? "h-full overflow-y-auto" : "hidden"}>
+        <ServersPage />
+      </div>
+      <div className={terminalVisible ? "h-full min-h-0" : "hidden"}>
+        <TerminalWorkspace visible={terminalVisible} />
+      </div>
+    </AppShell>
   );
 }

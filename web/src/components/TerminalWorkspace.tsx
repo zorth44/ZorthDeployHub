@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
+  CornerDownLeft,
+  FolderTree,
   Maximize2,
   Minimize2,
   Plus,
   Search,
+  Server,
   ShieldCheck,
   SquareTerminal,
   X,
@@ -13,44 +16,57 @@ import {
 import { fetchServers, type ServerRecord } from "../lib/api";
 import { createId } from "../lib/id";
 import { useT } from "../i18n/useT";
+import { RemoteFilesSidebar } from "./RemoteFilesSidebar";
 import { TerminalPane } from "./TerminalPane";
 
 type Tab = { id: string; serverId: string; title: string };
 
-export function TerminalWorkspace() {
+export function TerminalWorkspace({ visible = true }: { visible?: boolean }) {
   const t = useT();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [servers, setServers] = useState<ServerRecord[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQuery, setPickerQuery] = useState("");
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [filesOpen, setFilesOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
-  const bootstrapped = useRef(false);
+  const consumedRequest = useRef<string | null>(null);
+  const pickerInputRef = useRef<HTMLInputElement>(null);
+  const pickerListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!visible) return;
     void fetchServers().then(setServers).catch(() => setServers([]));
-  }, []);
+  }, [visible]);
 
   useEffect(() => {
-    if (bootstrapped.current) return;
+    // Let the workspace normalize the legacy /files route first. Consuming its
+    // query here as well would create the same terminal twice.
+    if (location.pathname === "/files") return;
     const serverId = searchParams.get("serverId");
     const name = searchParams.get("name");
     if (!serverId) {
-      bootstrapped.current = true;
+      consumedRequest.current = null;
       return;
     }
+    const requestKey = searchParams.toString();
+    if (consumedRequest.current === requestKey) return;
+    consumedRequest.current = requestKey;
     const tabId = createId();
-    setTabs([{ id: tabId, serverId, title: name || t("terminal.defaultTitle") }]);
+    setTabs((prev) => [...prev, { id: tabId, serverId, title: name || t("terminal.defaultTitle") }]);
     setActiveId(tabId);
-    bootstrapped.current = true;
+    if (searchParams.get("files") === "1") setFilesOpen(true);
     navigate("/terminal", { replace: true });
-  }, [navigate, searchParams, t]);
+  }, [location.pathname, navigate, searchParams, t]);
 
   useEffect(() => {
     if (!pickerOpen) return;
     setPickerQuery("");
+    setHighlightedIndex(0);
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setPickerOpen(false);
     };
@@ -68,6 +84,16 @@ export function TerminalWorkspace() {
         .includes(query),
     );
   }, [pickerQuery, servers]);
+
+  useEffect(() => {
+    setHighlightedIndex((current) => Math.min(current, Math.max(0, filteredServers.length - 1)));
+  }, [filteredServers.length]);
+
+  useEffect(() => {
+    pickerListRef.current
+      ?.querySelector<HTMLElement>("[data-highlighted='true']")
+      ?.scrollIntoView({ block: "nearest" });
+  }, [highlightedIndex]);
 
   const addTab = useCallback((server: ServerRecord) => {
     const tabId = createId();
@@ -92,6 +118,22 @@ export function TerminalWorkspace() {
     setTabs((prev) => prev.map((tab) => (tab.id === tabId ? { ...tab, title } : tab)));
   }, []);
 
+  const activeTab = tabs.find((tab) => tab.id === activeId) ?? null;
+  const activeServer = servers.find((server) => server.id === activeTab?.serverId) ?? null;
+
+  function handlePickerKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setHighlightedIndex((current) => Math.min(current + 1, Math.max(0, filteredServers.length - 1)));
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setHighlightedIndex((current) => Math.max(0, current - 1));
+    } else if (event.key === "Enter" && filteredServers[highlightedIndex]) {
+      event.preventDefault();
+      addTab(filteredServers[highlightedIndex]);
+    }
+  }
+
   return (
     <div className={fullscreen ? "fixed inset-0 z-50 flex flex-col bg-[var(--color-background)]" : "flex h-full min-h-0 flex-col"}>
       <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-[var(--color-border)] bg-[var(--color-card)]/94 px-3 sm:px-4">
@@ -108,8 +150,18 @@ export function TerminalWorkspace() {
           <span className="hidden font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-muted-foreground)] sm:inline">
             {t("terminal.sessions", { count: tabs.length })}
           </span>
+          <button
+            type="button"
+            className={`secondary-button min-h-9 px-2.5 text-xs ${filesOpen ? "border-emerald-300/30 bg-emerald-400/10 text-[var(--color-primary)]" : ""}`}
+            onClick={() => setFilesOpen((value) => !value)}
+            aria-pressed={filesOpen}
+            title={t("files.toggleSidebar")}
+          >
+            <FolderTree className="size-4" />
+            <span className="hidden sm:inline">{t("files.title")}</span>
+          </button>
           {fullscreen ? (
-            <Link to="/" className="ghost-button hidden sm:inline-flex">
+            <Link to="/" onClick={() => setFullscreen(false)} className="ghost-button hidden sm:inline-flex">
               <ArrowLeft className="size-4" />
               {t("common.backToServers")}
             </Link>
@@ -137,9 +189,10 @@ export function TerminalWorkspace() {
         </div>
       </div>
 
-      <div className="relative min-h-0 flex-1 bg-[#070b0f]">
-        {tabs.length === 0 ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+      <div className="relative flex min-h-0 flex-1 bg-[#070b0f]">
+        <div className="relative min-w-0 flex-1">
+          {tabs.length === 0 ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
             <span className="flex size-14 items-center justify-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-primary)] shadow-[0_18px_50px_rgba(0,0,0,0.35)]">
               <SquareTerminal className="size-6" />
             </span>
@@ -150,9 +203,11 @@ export function TerminalWorkspace() {
               {t("terminal.openServer")}
             </button>
           </div>
-        ) : (
-          tabs.map((tab) => <TerminalPane key={tab.id} serverId={tab.serverId} active={tab.id === activeId} onTitle={(title) => renameTab(tab.id, title)} />)
-        )}
+          ) : (
+            tabs.map((tab) => <TerminalPane key={tab.id} serverId={tab.serverId} active={visible && tab.id === activeId} onTitle={(title) => renameTab(tab.id, title)} />)
+          )}
+        </div>
+        {filesOpen ? <RemoteFilesSidebar server={activeServer} onClose={() => setFilesOpen(false)} /> : null}
       </div>
 
       <div className="flex h-6 shrink-0 items-center justify-between border-t border-[var(--color-border)] bg-[var(--color-card)] px-3 font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--color-muted-foreground)]">
@@ -161,34 +216,58 @@ export function TerminalWorkspace() {
       </div>
 
       {pickerOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-[2px]" onMouseDown={(event) => {
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/55 px-3 pt-[max(4rem,10vh)] backdrop-blur-[2px]" onMouseDown={(event) => {
           if (event.target === event.currentTarget) setPickerOpen(false);
         }}>
-          <div role="dialog" aria-modal="true" aria-labelledby="terminal-picker-title" className="w-full max-w-lg overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] shadow-[var(--shadow-float)]">
-            <div className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-4">
-              <div>
-                <p className="eyebrow">SSH Session</p>
-                <h2 id="terminal-picker-title" className="mt-0.5 text-lg font-semibold">{t("terminal.pickerTitle")}</h2>
-              </div>
-              <button type="button" onClick={() => setPickerOpen(false)} className="icon-button" aria-label={t("common.close")}><X className="size-4" /></button>
+          <div role="dialog" aria-modal="true" aria-labelledby="terminal-picker-title" className="w-full max-w-xl overflow-hidden rounded-xl border border-[var(--color-border-strong)] bg-[#121a23] shadow-[var(--shadow-float)]">
+            <div className="flex items-center gap-3 border-b border-[var(--color-border)] px-3.5">
+              <Search className="size-[18px] shrink-0 text-[var(--color-primary)]" />
+              <input
+                ref={pickerInputRef}
+                value={pickerQuery}
+                onChange={(event) => {
+                  setPickerQuery(event.target.value);
+                  setHighlightedIndex(0);
+                }}
+                onKeyDown={handlePickerKeyDown}
+                placeholder={t("terminal.searchPlaceholder")}
+                className="h-14 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[#657586] focus-visible:outline-none"
+                autoFocus
+              />
+              <kbd className="rounded border border-[var(--color-border)] bg-[var(--color-muted)]/60 px-1.5 py-0.5 font-mono text-[9px] text-[var(--color-muted-foreground)]">ESC</kbd>
             </div>
-            <div className="p-4 sm:p-5">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--color-muted-foreground)]" />
-                <input value={pickerQuery} onChange={(event) => setPickerQuery(event.target.value)} placeholder={t("terminal.searchPlaceholder")} className="field pl-10" autoFocus />
+            <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-2">
+              <div>
+                <h2 id="terminal-picker-title" className="text-xs font-semibold">{t("terminal.pickerTitle")}</h2>
+                <p className="mt-0.5 text-[10px] text-[var(--color-muted-foreground)]">{t("terminal.pickerHint")}</p>
               </div>
-              <div className="mt-3 max-h-80 space-y-2 overflow-y-auto pr-1">
+              <span className="font-mono text-[9px] text-[var(--color-muted-foreground)]">{t("terminal.serverCount", { count: filteredServers.length })}</span>
+            </div>
+            <div ref={pickerListRef} className="max-h-[min(24rem,55vh)] overflow-y-auto p-1.5">
                 {filteredServers.length === 0 ? (
-                  <p className="px-2 py-8 text-center text-sm text-[var(--color-muted-foreground)]">{t("terminal.noServers")}</p>
+                  <p className="px-2 py-10 text-center text-sm text-[var(--color-muted-foreground)]">{t("terminal.noServers")}</p>
                 ) : (
-                  filteredServers.map((server) => (
-                    <button key={server.id} type="button" onClick={() => addTab(server)} className="flex w-full items-center justify-between gap-4 rounded-xl border border-[var(--color-border)] px-3.5 py-3 text-left hover:border-[var(--color-border-strong)] hover:bg-[var(--color-muted)]/55">
-                      <span className="min-w-0"><span className="block truncate text-sm font-medium">{server.name}</span><span className="mt-1 block truncate font-mono text-[11px] text-[var(--color-muted-foreground)]">{server.username}@{server.host}:{server.port}</span></span>
-                      <Plus className="size-4 shrink-0 text-[var(--color-primary)]" />
+                  filteredServers.map((server, index) => (
+                    <button
+                      key={server.id}
+                      type="button"
+                      data-highlighted={index === highlightedIndex}
+                      onMouseEnter={() => setHighlightedIndex(index)}
+                      onClick={() => addTab(server)}
+                      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left ${index === highlightedIndex ? "bg-[var(--color-muted)] text-[var(--color-foreground)]" : "text-[#c2ccd6]"}`}
+                    >
+                      <span className={`flex size-8 shrink-0 items-center justify-center rounded-lg border ${index === highlightedIndex ? "border-emerald-300/25 bg-emerald-400/10 text-[var(--color-primary)]" : "border-[var(--color-border)] bg-black/10 text-[var(--color-muted-foreground)]"}`}><Server className="size-4" /></span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2"><span className="truncate text-sm font-medium">{server.name}</span>{server.group ? <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px]" style={{ color: server.group.color, backgroundColor: `${server.group.color}14` }}>{server.group.name}</span> : null}</span>
+                        <span className="mt-0.5 block truncate font-mono text-[10px] text-[var(--color-muted-foreground)]">{server.username}@{server.host}:{server.port}</span>
+                      </span>
+                      {index === highlightedIndex ? <CornerDownLeft className="size-3.5 shrink-0 text-[var(--color-primary)]" /> : null}
                     </button>
                   ))
                 )}
-              </div>
+            </div>
+            <div className="flex items-center gap-4 border-t border-[var(--color-border)] px-4 py-2 font-mono text-[9px] text-[var(--color-muted-foreground)]">
+              <span>↑↓ {t("terminal.pickerNavigate")}</span><span>↵ {t("terminal.pickerOpen")}</span><span>esc {t("common.close")}</span>
             </div>
           </div>
         </div>
