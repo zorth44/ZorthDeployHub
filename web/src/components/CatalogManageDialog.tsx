@@ -66,6 +66,20 @@ export function CatalogManageDialog({
     void refresh();
   }, [open, kind, refresh]);
 
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onOpenChange(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, onOpenChange]);
+
   if (!open) return null;
 
   function startEdit(item: GroupRecord | TagRecord) {
@@ -132,14 +146,19 @@ export function CatalogManageDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="flex max-h-[85vh] w-full max-w-lg flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-[2px]" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onOpenChange(false);
+    }}>
+      <div role="dialog" aria-modal="true" aria-labelledby="catalog-dialog-title" className="flex max-h-[85vh] w-full max-w-lg flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] shadow-[var(--shadow-float)]">
         <div className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-4">
-          <h2 className="text-lg font-semibold">{title}</h2>
+          <div>
+            <p className="eyebrow">Catalog</p>
+            <h2 id="catalog-dialog-title" className="mt-0.5 text-lg font-semibold">{title}</h2>
+          </div>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-md p-1.5 text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
+            className="icon-button"
             aria-label={t("common.close")}
           >
             <X className="size-4" />
@@ -162,6 +181,7 @@ export function CatalogManageDialog({
                 }
                 className="field"
                 required
+                autoFocus
               />
             </label>
             <div className="space-y-2 text-sm">
@@ -172,7 +192,7 @@ export function CatalogManageDialog({
               <button
                 type="submit"
                 disabled={busy}
-                className="inline-flex items-center gap-2 rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-[var(--color-primary-foreground)] disabled:opacity-60"
+                className="primary-button"
               >
                 <Plus className="size-4" />
                 {editingId ? t("common.save") : t("common.create")}
@@ -181,7 +201,7 @@ export function CatalogManageDialog({
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="rounded-md px-3 py-2 text-sm text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
+                  className="ghost-button"
                 >
                   {t("catalog.cancelEdit")}
                 </button>
@@ -236,19 +256,6 @@ export function CatalogManageDialog({
           )}
         </div>
       </div>
-      <style>{`
-        .field {
-          width: 100%;
-          border-radius: 0.375rem;
-          border: 1px solid var(--color-border);
-          background: var(--color-input);
-          padding: 0.5rem 0.75rem;
-          outline: none;
-        }
-        .field:focus {
-          box-shadow: 0 0 0 2px var(--color-ring);
-        }
-      `}</style>
     </div>
   );
 }

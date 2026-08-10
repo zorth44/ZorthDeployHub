@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Server, X } from "lucide-react";
 import {
   COLOR_PRESETS,
   createTag,
@@ -82,6 +83,20 @@ export function ServerFormDialog({
     setError(null);
   }, [open, initial, t]);
 
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onOpenChange(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, onOpenChange]);
+
   if (!open) return null;
 
   function toggleTag(tagId: string) {
@@ -159,13 +174,35 @@ export function ServerFormDialog({
     }
   }
 
+  const title = isEdit ? t("serverForm.editTitle") : t("serverForm.addTitle");
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 shadow-2xl">
-        <h2 className="mb-4 text-lg font-semibold">
-          {isEdit ? t("serverForm.editTitle") : t("serverForm.addTitle")}
-        </h2>
-        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+    <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-[2px]" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onOpenChange(false);
+    }}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="server-form-title"
+        className="absolute inset-y-0 right-0 flex w-full max-w-lg flex-col border-l border-[var(--color-border)] bg-[var(--color-card)] shadow-[var(--shadow-float)]"
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-[var(--color-border)] px-5 py-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 items-center justify-center rounded-xl border border-emerald-300/15 bg-emerald-400/10 text-[var(--color-primary)]">
+              <Server className="size-[18px]" />
+            </span>
+            <div>
+              <p className="eyebrow">SSH Target</p>
+              <h2 id="server-form-title" className="mt-0.5 text-lg font-semibold">{title}</h2>
+            </div>
+          </div>
+          <button type="button" onClick={() => onOpenChange(false)} className="icon-button" aria-label={t("common.close")}>
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <form onSubmit={(e) => void handleSubmit(e)} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
           <Field label={t("serverForm.name")}>
             <input
               value={form.name}
@@ -173,6 +210,7 @@ export function ServerFormDialog({
               required
               placeholder="API"
               className="field"
+              autoFocus
             />
           </Field>
           <Field label={t("serverForm.host")}>
@@ -288,20 +326,21 @@ export function ServerFormDialog({
             />
           </Field>
           {error ? (
-            <p className="text-sm text-[var(--color-destructive)]">{error}</p>
+            <p className="rounded-lg border border-red-400/20 bg-red-400/8 px-3 py-2.5 text-sm text-[var(--color-destructive)]">{error}</p>
           ) : null}
-          <div className="flex justify-end gap-2 pt-2">
+          </div>
+          <div className="flex shrink-0 justify-end gap-2 border-t border-[var(--color-border)] bg-[var(--color-card)] px-5 py-4 sm:px-6">
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="rounded-md px-3 py-2 text-sm text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
+              className="ghost-button"
             >
               {t("common.cancel")}
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="rounded-md bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-[var(--color-primary-foreground)] disabled:opacity-60"
+              className="primary-button"
             >
               {saving
                 ? t("serverForm.saving")
@@ -312,19 +351,6 @@ export function ServerFormDialog({
           </div>
         </form>
       </div>
-      <style>{`
-        .field {
-          width: 100%;
-          border-radius: 0.375rem;
-          border: 1px solid var(--color-border);
-          background: var(--color-input);
-          padding: 0.5rem 0.75rem;
-          outline: none;
-        }
-        .field:focus {
-          box-shadow: 0 0 0 2px var(--color-ring);
-        }
-      `}</style>
     </div>
   );
 }

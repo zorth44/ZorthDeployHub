@@ -53,9 +53,7 @@ export default function App() {
           element={
             <Protected>
               <AppShell fullHeight>
-                <div className="mx-auto flex h-full w-full max-w-5xl flex-col p-6">
-                  <FilesPage />
-                </div>
+                <FilesPage />
               </AppShell>
             </Protected>
           }

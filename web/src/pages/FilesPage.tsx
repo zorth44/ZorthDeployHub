@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
+  AlertTriangle,
   ArrowLeft,
+  ChevronRight,
   Download,
+  File,
+  Folder,
   FolderPlus,
   HardDrive,
   LoaderCircle,
@@ -207,30 +211,25 @@ export function FilesPage() {
   const crumbs = breadcrumbParts(path);
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="space-y-2">
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-4 py-5 sm:px-6 sm:py-7 xl:px-10">
+      <div className="flex shrink-0 flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+        <div>
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+            className="inline-flex items-center gap-1.5 text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] lg:hidden"
           >
             <ArrowLeft className="size-4" />
             {t("common.backToServers")}
           </Link>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight">
-              {selectedServer
-                ? `${selectedServer.name} · ${t("files.title")}`
-                : t("files.title")}
-            </h1>
-            <p className="text-sm text-[var(--color-muted-foreground)]">
-              {t("files.subtitle")}
-            </p>
-          </div>
+          <p className="eyebrow mt-4 lg:mt-0">{t("files.eyebrow")}</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-[-0.025em]">
+            {selectedServer ? `${selectedServer.name} · ${t("files.title")}` : t("files.title")}
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">{t("files.subtitle")}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]">
-            <HardDrive className="size-4" />
+        <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+          <label className="relative flex min-w-0 items-center text-sm text-[var(--color-muted-foreground)]">
+            <HardDrive className="pointer-events-none absolute left-3 size-4" />
             <select
               value={serverId}
               onChange={(e) => {
@@ -240,7 +239,8 @@ export function FilesPage() {
                   replace: true,
                 });
               }}
-              className="rounded-md border border-[var(--color-border)] bg-[var(--color-input)] px-2 py-1.5 text-[var(--color-foreground)]"
+              className="field min-w-40 appearance-none pl-9 pr-8 text-[var(--color-foreground)]"
+              aria-label={t("servers.title")}
             >
               {servers.length === 0 ? (
                 <option value="">{t("files.noServersOption")}</option>
@@ -257,7 +257,7 @@ export function FilesPage() {
             type="button"
             onClick={() => void refresh(path)}
             disabled={!serverId || loading}
-            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] px-3 py-1.5 text-sm hover:bg-[var(--color-muted)] disabled:opacity-50"
+            className="secondary-button"
           >
             <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
             {t("files.refresh")}
@@ -266,7 +266,7 @@ export function FilesPage() {
             type="button"
             onClick={() => void handleMkdir()}
             disabled={!serverId || !path || loading}
-            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] px-3 py-1.5 text-sm hover:bg-[var(--color-muted)] disabled:opacity-50"
+            className="secondary-button"
           >
             <FolderPlus className="size-4" />
             {t("files.newFolder")}
@@ -275,7 +275,7 @@ export function FilesPage() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={!serverId || !path || loading || uploadPct !== null}
-            className="inline-flex items-center gap-1.5 rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-sm font-medium text-[var(--color-primary-foreground)] disabled:opacity-50"
+            className="primary-button"
           >
             <Upload className="size-4" />
             {t("files.upload")}
@@ -290,31 +290,26 @@ export function FilesPage() {
         </div>
       </div>
 
-      {selectedServer ? (
-        <p className="font-mono text-xs text-[var(--color-muted-foreground)]">
-          {selectedServer.username}@{selectedServer.host}:{selectedServer.port}
-        </p>
-      ) : null}
-
-      <nav className="flex flex-wrap items-center gap-1 text-sm">
-        {crumbs.map((crumb, index) => (
-          <span key={crumb.path} className="flex items-center gap-1">
-            {index > 0 ? (
-              <span className="text-[var(--color-muted-foreground)]">/</span>
-            ) : null}
-            <button
-              type="button"
-              className="rounded px-1.5 py-0.5 font-mono text-[var(--color-foreground)] hover:bg-[var(--color-muted)]"
-              onClick={() => void refresh(crumb.path)}
-            >
-              {crumb.label}
-            </button>
-          </span>
-        ))}
-      </nav>
+      <div className="surface mt-5 flex shrink-0 flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+        <nav className="flex min-w-0 flex-wrap items-center gap-0.5 text-xs" aria-label={t("files.title")}>
+          {crumbs.map((crumb, index) => (
+            <span key={crumb.path} className="flex min-w-0 items-center">
+              {index > 0 ? <ChevronRight className="size-3.5 shrink-0 text-[#566575]" /> : null}
+              <button type="button" className="max-w-40 truncate rounded-md px-2 py-1.5 font-mono text-[#b8c4cf] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]" onClick={() => void refresh(crumb.path)}>
+                {crumb.label}
+              </button>
+            </span>
+          ))}
+        </nav>
+        {selectedServer ? (
+          <p className="shrink-0 truncate font-mono text-[10px] text-[var(--color-muted-foreground)]">
+            {selectedServer.username}@{selectedServer.host}:{selectedServer.port}
+          </p>
+        ) : null}
+      </div>
 
       {uploadPct !== null ? (
-        <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-sm">
+        <div className="mt-3 shrink-0 rounded-xl border border-emerald-300/15 bg-emerald-400/6 px-4 py-3 text-sm">
           {t("files.uploading", { name: busyName ?? "", pct: uploadPct })}
           <div className="mt-2 h-1.5 overflow-hidden rounded bg-[var(--color-muted)]">
             <div
@@ -326,62 +321,72 @@ export function FilesPage() {
       ) : null}
 
       {error ? (
-        <p className="text-sm text-[var(--color-destructive)]">{error}</p>
+        <div className="mt-3 flex shrink-0 gap-3 rounded-xl border border-amber-300/20 bg-amber-300/7 px-4 py-3" role="alert">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-300" />
+          <div>
+            <p className="text-sm font-medium text-amber-100">{t("files.connectionError")}</p>
+            <p className="mt-0.5 text-xs text-amber-100/60">{t("files.errorHint")}</p>
+          </div>
+        </div>
       ) : null}
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]">
+      <div className="surface mt-3 min-h-0 flex-1 overflow-auto">
         {!serverId ? (
-          <div className="p-6 text-sm text-[var(--color-muted-foreground)]">
+          <div className="flex h-full min-h-56 items-center justify-center p-6 text-center text-sm text-[var(--color-muted-foreground)]">
             {t("files.noServer")}
           </div>
         ) : loading && entries.length === 0 ? (
-          <div className="flex items-center gap-2 p-6 text-sm text-[var(--color-muted-foreground)]">
+          <div className="flex h-full min-h-56 items-center justify-center gap-2 p-6 text-sm text-[var(--color-muted-foreground)]">
             <LoaderCircle className="size-4 animate-spin" />
             {t("files.loading")}
           </div>
         ) : (
           <table className="w-full text-left text-sm">
-            <thead className="sticky top-0 bg-[var(--color-card)] text-[var(--color-muted-foreground)]">
+            <thead className="sticky top-0 z-10 bg-[var(--color-card-elevated)] text-[var(--color-muted-foreground)] shadow-[0_1px_0_var(--color-border)]">
               <tr className="border-b border-[var(--color-border)]">
-                <th className="px-4 py-2 font-medium">{t("files.name")}</th>
-                <th className="px-4 py-2 font-medium">{t("files.size")}</th>
-                <th className="hidden px-4 py-2 font-medium sm:table-cell">
+                <th className="px-4 py-3 text-xs font-medium">{t("files.name")}</th>
+                <th className="px-4 py-3 text-xs font-medium">{t("files.size")}</th>
+                <th className="hidden px-4 py-3 text-xs font-medium sm:table-cell">
                   {t("files.modified")}
                 </th>
-                <th className="px-4 py-2 font-medium">{t("files.actions")}</th>
+                <th className="px-4 py-3 text-right text-xs font-medium">{t("files.actions")}</th>
               </tr>
             </thead>
             <tbody>
               {entries.map((entry) => (
                 <tr
                   key={entry.path + entry.name}
-                  className="border-b border-[var(--color-border)]/70 last:border-0"
+                  className="border-b border-[var(--color-border)]/70 last:border-0 hover:bg-[var(--color-muted)]/25"
                 >
-                  <td className="px-4 py-2">
+                  <td className="px-4 py-3">
                     {entry.isDir ? (
                       <button
                         type="button"
-                        className="font-mono text-[var(--color-primary)] hover:underline"
+                        className="inline-flex max-w-[18rem] items-center gap-2.5 font-mono text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] sm:max-w-none"
                         onClick={() => void openEntry(entry)}
                       >
-                        {entry.name}/
+                        <Folder className="size-4 shrink-0 fill-emerald-400/10" />
+                        <span className="truncate">{entry.name}/</span>
                       </button>
                     ) : (
-                      <span className="font-mono">{entry.name}</span>
+                      <span className="inline-flex max-w-[18rem] items-center gap-2.5 font-mono sm:max-w-none">
+                        <File className="size-4 shrink-0 text-[var(--color-muted-foreground)]" />
+                        <span className="truncate">{entry.name}</span>
+                      </span>
                     )}
                   </td>
-                  <td className="px-4 py-2 tabular-nums text-[var(--color-muted-foreground)]">
+                  <td className="px-4 py-3 font-mono text-xs tabular-nums text-[var(--color-muted-foreground)]">
                     {formatSize(entry.size, entry.isDir)}
                   </td>
-                  <td className="hidden px-4 py-2 text-[var(--color-muted-foreground)] sm:table-cell">
+                  <td className="hidden px-4 py-3 text-xs text-[var(--color-muted-foreground)] sm:table-cell">
                     {entry.name === ".." ? "—" : formatTime(entry.modTime)}
                   </td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center gap-1">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1.5">
                       {!entry.isDir ? (
                         <button
                           type="button"
-                          className="rounded-md border border-[var(--color-border)] p-1.5 hover:bg-[var(--color-muted)] disabled:opacity-50"
+                          className="icon-button min-h-8 min-w-8"
                           disabled={busyName === entry.name}
                           onClick={() => void handleDownload(entry)}
                           aria-label={t("files.download", { name: entry.name })}
@@ -392,7 +397,7 @@ export function FilesPage() {
                       {entry.name !== ".." ? (
                         <button
                           type="button"
-                          className="rounded-md border border-[var(--color-border)] p-1.5 hover:bg-[var(--color-muted)] disabled:opacity-50"
+                          className="icon-button min-h-8 min-w-8 hover:border-red-400/30 hover:bg-red-400/10 hover:text-[var(--color-destructive)]"
                           disabled={busyName === entry.name}
                           onClick={() => void handleDelete(entry)}
                           aria-label={t("common.delete", { name: entry.name })}
@@ -408,7 +413,7 @@ export function FilesPage() {
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-4 py-8 text-center text-[var(--color-muted-foreground)]"
+                    className="h-48 px-4 py-8 text-center text-[var(--color-muted-foreground)]"
                   >
                     {t("files.emptyDir")}
                   </td>

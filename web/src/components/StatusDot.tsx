@@ -1,7 +1,7 @@
 import type { OnlineStatus } from "../lib/api";
 import { useT } from "../i18n/useT";
 
-export function StatusDot({ status }: { status: OnlineStatus }) {
+export function StatusDot({ status, showLabel = false }: { status: OnlineStatus; showLabel?: boolean }) {
   const t = useT();
   const color =
     status === "online"
@@ -18,10 +18,9 @@ export function StatusDot({ status }: { status: OnlineStatus }) {
         : t("status.unknown");
 
   return (
-    <span
-      className={`inline-block size-2.5 shrink-0 rounded-full ${color}`}
-      title={label}
-      aria-label={label}
-    />
+    <span className="inline-flex items-center gap-1.5" title={label} aria-label={label}>
+      <span className={`inline-block size-2 shrink-0 rounded-full ${color} ${status === "online" ? "shadow-[0_0_10px_rgba(52,211,153,0.45)]" : ""}`} />
+      {showLabel ? <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-muted-foreground)]">{label}</span> : null}
+    </span>
   );
 }
