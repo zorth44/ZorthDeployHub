@@ -92,6 +92,10 @@ export const zh: Record<MessageKey, string> = {
   "terminal.fullscreenEnter": "进入全屏",
   "terminal.fullscreenExit": "退出全屏",
   "terminal.defaultTitle": "终端",
+  "terminal.copy": "复制",
+  "terminal.paste": "粘贴",
+  "terminal.copyFailed": "复制失败",
+  "terminal.pasteFailed": "粘贴失败，请改用 Ctrl/Cmd+V",
 
   "files.title": "文件",
   "files.subtitle": "通过 SFTP 浏览、上传与下载。",

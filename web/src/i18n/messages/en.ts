@@ -90,6 +90,10 @@ export const en = {
   "terminal.fullscreenEnter": "Enter fullscreen",
   "terminal.fullscreenExit": "Exit fullscreen",
   "terminal.defaultTitle": "Terminal",
+  "terminal.copy": "Copy",
+  "terminal.paste": "Paste",
+  "terminal.copyFailed": "Copy failed",
+  "terminal.pasteFailed": "Paste failed — try Ctrl/Cmd+V",
 
   "files.title": "Files",
   "files.subtitle": "Browse, upload, and download over SFTP.",

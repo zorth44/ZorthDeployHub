@@ -7,8 +7,11 @@
 @import "@fontsource/ibm-plex-mono/600.css";
 
 @theme {
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Real font names only — xterm canvas cannot resolve CSS variables. */
+  --font-sans: "IBM Plex Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+    "Liberation Mono", monospace;
   --color-background: #0f1419;
   --color-foreground: #e7ecf1;
   --color-card: #171d24;
